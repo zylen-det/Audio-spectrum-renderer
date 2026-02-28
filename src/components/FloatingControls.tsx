@@ -138,6 +138,7 @@ export const FloatingControls = ({
                     />
 
                     <SettingInput
+                      title={dict.controls.spacing_title}
                       label={dict.controls.spacing}
                       value={settings.spacing}
                       onChange={(v) => updateSetting("spacing", v)}
@@ -149,6 +150,7 @@ export const FloatingControls = ({
                     />
 
                     <SettingInput
+                      title={dict.controls.barWidth_title}
                       label={dict.controls.barWidth}
                       value={settings.barWidth}
                       onChange={(v) => updateSetting("barWidth", v)}
@@ -159,6 +161,7 @@ export const FloatingControls = ({
                     />
 
                     <SettingInput
+                      title={dict.controls.totalWidth_title}
                       label={dict.controls.totalWidth}
                       value={settings.totalWidth}
                       onChange={(v) => updateSetting("totalWidth", v)}
@@ -169,6 +172,7 @@ export const FloatingControls = ({
                       unit="px"
                     />
                     <SettingInput
+                      title={dict.controls.yOffset_title}
                       label={dict.controls.yOffset}
                       value={settings.yOffset || 0}
                       onChange={(v) => updateSetting("yOffset", v)}
@@ -287,6 +291,7 @@ export const FloatingControls = ({
                   </h3>
                   <div className="grid grid-cols-4 gap-x-6 gap-y-2">
                     <SettingInput
+                      title={dict.controls.gain_title}
                       label={dict.controls.gain}
                       value={settings.barHeightMultiplier}
                       onChange={(v) => updateSetting("barHeightMultiplier", v)}
@@ -298,6 +303,7 @@ export const FloatingControls = ({
                     />
 
                     <SettingInput
+                      title={dict.controls.cornerRadius_title}
                       label={dict.controls.cornerRadius}
                       value={settings.cornerRadius}
                       onChange={(v) => updateSetting("cornerRadius", v)}
@@ -308,6 +314,7 @@ export const FloatingControls = ({
                     />
 
                     <SettingInput
+                      title={dict.controls.contrast_title}
                       label={dict.controls.contrast}
                       value={settings.contrast || 1.2}
                       onChange={(v) => updateSetting("contrast", v)}
@@ -318,6 +325,7 @@ export const FloatingControls = ({
                       unit=""
                     />
                     <SettingInput
+                      title={dict.controls.referenceFps_title}
                       label={dict.controls.referenceFps}
                       value={settings.referenceFps ?? 144}
                       onChange={(v) => updateSetting("referenceFps", v)}
@@ -328,6 +336,7 @@ export const FloatingControls = ({
                       unit="fps"
                     />
                     <SettingInput
+                      title={dict.controls.attack_title}
                       label={dict.controls.attack}
                       value={settings.attack || 0.05}
                       onChange={(v) => updateSetting("attack", v)}
@@ -339,6 +348,7 @@ export const FloatingControls = ({
                     />
 
                     <SettingInput
+                      title={dict.controls.decay_title}
                       label={dict.controls.decay}
                       value={settings.decay || 0.92}
                       onChange={(v) => updateSetting("decay", v)}
@@ -350,6 +360,7 @@ export const FloatingControls = ({
                     />
 
                     <SettingInput
+                      title={dict.controls.ceiling_title}
                       label={dict.controls.ceiling}
                       value={settings.softCeilingThreshold ?? 0.7}
                       onChange={(v) => updateSetting("softCeilingThreshold", v)}
@@ -359,6 +370,7 @@ export const FloatingControls = ({
                       step={0.05}
                     />
                     <SettingInput
+                      title={dict.controls.strength_title}
                       label={dict.controls.strength}
                       value={settings.softCeilingStrength ?? 2.0}
                       onChange={(v) => updateSetting("softCeilingStrength", v)}
