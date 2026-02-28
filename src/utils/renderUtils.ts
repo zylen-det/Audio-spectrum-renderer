@@ -8,7 +8,7 @@ export const drawFrame = (
   width: number,
   height: number,
 ) => {
-  ctx.fillStyle = settings.backgroundColor
+  ctx.fillStyle = settings.backgroundColor || "#000"
   ctx.fillRect(0, 0, width, height)
 
   if (!data) return
@@ -25,7 +25,13 @@ export const drawFrame = (
     ctx.beginPath()
     for (const bar of positiveBars) {
       if ((ctx as any).roundRect) {
-        ;(ctx as any).roundRect(bar.x, bar.y, bar.width, bar.height, settings.cornerRadius)
+        ;(ctx as any).roundRect(
+          bar.x,
+          bar.y,
+          bar.width,
+          bar.height,
+          settings.cornerRadius,
+        )
       } else {
         ctx.rect(bar.x, bar.y, bar.width, bar.height)
       }
@@ -38,7 +44,13 @@ export const drawFrame = (
     ctx.beginPath()
     for (const bar of negativeBars) {
       if ((ctx as any).roundRect) {
-        ;(ctx as any).roundRect(bar.x, bar.y, bar.width, bar.height, settings.cornerRadius)
+        ;(ctx as any).roundRect(
+          bar.x,
+          bar.y,
+          bar.width,
+          bar.height,
+          settings.cornerRadius,
+        )
       } else {
         ctx.rect(bar.x, bar.y, bar.width, bar.height)
       }

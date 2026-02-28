@@ -520,6 +520,27 @@ export const FloatingControls = ({
                       unit="fps"
                     />
                   </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-bold text-zinc-500 uppercase">
+                      {dict.controls.greenScreen || "導出綠幕"}
+                    </label>
+                    <label className="relative flex items-center cursor-pointer gap-2 h-8">
+                      <input
+                        type="checkbox"
+                        checked={settings.backgroundColor == "#00FF00"}
+                        onChange={(e) => {
+                          updateSetting(
+                            "backgroundColor",
+                            e.target.checked ? "#00FF00" : "",
+                          )
+                        }}
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0"
+                      />
+                      <span className="text-xs text-zinc-300">
+                        {dict.controls.enable} ( #00FF00 )
+                      </span>
+                    </label>
+                  </div>
                   <div className="w-56 space-y-2">
                     <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
                       {dict.controls.encoder}

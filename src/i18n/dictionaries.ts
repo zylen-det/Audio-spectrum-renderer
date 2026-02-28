@@ -66,8 +66,10 @@ export const dictionaries = {
       },
       referenceFps: "Reference FPS",
       referenceFps_title:
-        "Frequency of waveform calculations. Higher values ​​provide more responsive beats, does not affect render FPS.",
+        "Frequency of waveform calculations. Higher values provide more responsive beats, does not affect render FPS.",
       frequencyRange: "Frequency Range",
+      greenScreen: "Green Screen",
+      enable: "Enable",
     },
     drawer: {
       audioFiles: "Audio Files",
@@ -147,6 +149,8 @@ export const dictionaries = {
       referenceFps_title:
         "波形進行數學計算的頻率，越高跳動的越靈敏，不影響渲染幀率。",
       frequencyRange: "波形頻率範圍",
+      greenScreen: "綠幕",
+      enable: "啟用",
     },
     drawer: {
       audioFiles: "音頻庫",
