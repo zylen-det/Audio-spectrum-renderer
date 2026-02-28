@@ -22,13 +22,10 @@ export function PopOutButton({ onClick, title, children }: props) {
 
   return (
     <div
-      // 【關鍵修改 1】：拿掉 left-0 right-0，改用 left-1/2 -translate-x-1/2 置中
-      // 【關鍵修改 2】：給予明確寬度 (w-24)，讓感應區只集中在中段
       className="fixed top-0 left-1/2 -translate-x-1/2 w-24 h-16 pt-4 flex justify-center z-[100] pointer-events-none"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 隱形感應區：現在它只會有 96px (w-24) 寬，絕對不會擋到左右兩邊的其他按鈕 */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-auto" />
 
       <motion.button
