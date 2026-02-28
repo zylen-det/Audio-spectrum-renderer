@@ -13,6 +13,8 @@ import type { FFmpeg } from "@ffmpeg/ffmpeg"
 import { fetchFile, toBlobURL } from "@ffmpeg/util"
 import { generateASSHeader, generateASSFrame } from "../../utils/assUtils"
 import { runVideoRender } from "../../utils/videoRenderer"
+import { motion } from "motion/react"
+import { PopOutButton } from "../../components/PopOutButton"
 
 export const DEFAULT_SETTINGS: VisualizerSettings = {
   barCount: 24,
@@ -339,8 +341,7 @@ export default function App() {
         currentFileName={files.find((f) => f.id === currentFileId)?.name}
       />
 
-      <button
-        className="fixed top-4 right-4 bg-zinc-800 text-white text-xs w-10 h-10 px-3 py-1 rounded-full shadow-md hover:bg-zinc-700 transition-colors z-100"
+      <PopOutButton
         title={lang === "en" ? "Switch to Chinese" : "切換至英文"}
         onClick={() => {
           const nextLang = lang === "en" ? "zh" : "en"
@@ -352,7 +353,7 @@ export default function App() {
         }}
       >
         {lang === "en" ? "中文" : "EN"}
-      </button>
+      </PopOutButton>
     </div>
   )
 }

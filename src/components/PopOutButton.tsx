@@ -1,0 +1,55 @@
+import React, { useState, useEffect } from "react"
+import { motion } from "framer-motion"
+
+interface props {
+  onClick: React.MouseEventHandler<HTMLButtonElement>
+  title: string
+  children: React.ReactNode
+}
+
+export function PopOutButton({ onClick, title, children }: props) {
+  const [isInitialShow, setIsInitialShow] = useState(true)
+  const [isHovered, setIsHovered] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialShow(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const isVisible = isInitialShow || isHovered
+
+  return (
+    <div
+      // 【關鍵修改 1】：拿掉 left-0 right-0，改用 left-1/2 -translate-x-1/2 置中
+      // 【關鍵修改 2】：給予明確寬度 (w-24)，讓感應區只集中在中段
+      className="fixed top-0 left-1/2 -translate-x-1/2 w-24 h-16 pt-4 flex justify-center z-[100] pointer-events-none"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* 隱形感應區：現在它只會有 96px (w-24) 寬，絕對不會擋到左右兩邊的其他按鈕 */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-auto" />
+
+      <motion.button
+        initial={{ y: -60 }}
+        animate={{ y: isVisible ? 0 : -60 }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 25,
+        }}
+        className="
+            pointer-events-auto relative z-10
+            bg-zinc-800 text-white text-xs w-10 h-10 rounded-full shadow-md
+            flex items-center justify-center
+            hover:bg-zinc-700 transition-colors
+          "
+        title={title}
+        onClick={onClick}
+      >
+        {children}
+      </motion.button>
+    </div>
+  )
+}

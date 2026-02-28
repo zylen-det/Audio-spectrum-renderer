@@ -1,7 +1,14 @@
 import React from "react"
 import { motion } from "motion/react"
 import { AudioFile } from "../types"
-import { Trash2, Music, Upload, Clock, HardDrive } from "lucide-react"
+import {
+  Trash2,
+  Music,
+  Upload,
+  Clock,
+  HardDrive,
+  ListMusic,
+} from "lucide-react"
 import { useI18n } from "../app/[lang]/i18nContext"
 
 interface LeftDrawerProps {
@@ -33,13 +40,15 @@ export const LeftDrawer: React.FC<LeftDrawerProps> = ({
     >
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="absolute top-1/2 -right-8 w-8 h-16 bg-zinc-800 rounded-r-xl flex items-center justify-center border-y border-r border-zinc-700 hover:bg-zinc-700 transition-colors"
+        className="absolute top-4 -right-14 w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center border-zinc-800 hover:bg-zinc-800 transition-colors"
       >
-        <div className="w-1 h-8 bg-zinc-500 rounded-full" />
+        <ListMusic className="w-6 h-6 bg-transparent" />
       </button>
 
       <div className="p-6 border-b border-zinc-800">
-        <h2 className="text-xl font-bold mb-4 tracking-tight">{dict.drawer.audioFiles}</h2>
+        <h2 className="text-xl font-bold mb-4 tracking-tight">
+          {dict.drawer.audioFiles}
+        </h2>
         <label className="flex items-center justify-center gap-2 w-full bg-white text-black font-bold py-3 rounded-xl cursor-pointer hover:bg-zinc-200 transition-colors">
           <Upload size={18} />
           <span>{dict.common.upload}</span>
@@ -62,17 +71,19 @@ export const LeftDrawer: React.FC<LeftDrawerProps> = ({
           <div
             key={file.id}
             onClick={() => onSelect(file)}
-            className={`group p-3 rounded-xl border transition-all cursor-pointer relative ${currentFileId === file.id
+            className={`group p-3 rounded-xl border transition-all cursor-pointer relative ${
+              currentFileId === file.id
                 ? "bg-zinc-900 border-zinc-700"
                 : "bg-transparent border-transparent hover:bg-zinc-800/50"
-              }`}
+            }`}
           >
             <div className="flex items-start gap-3">
               <div
-                className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${currentFileId === file.id
+                className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                  currentFileId === file.id
                     ? "bg-zinc-600 text-white"
                     : "bg-zinc-800 text-zinc-500"
-                  }`}
+                }`}
               >
                 <Music size={20} />
               </div>

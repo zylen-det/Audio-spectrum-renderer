@@ -10,6 +10,7 @@ import {
   Film,
   X,
   AlertTriangle,
+  Logs,
 } from "lucide-react"
 
 interface RightDrawerProps {
@@ -49,13 +50,15 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
       >
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="absolute top-1/2 -left-8 w-8 h-16 bg-zinc-800 rounded-l-xl flex items-center justify-center border-y border-l border-zinc-700 hover:bg-zinc-700 transition-colors"
+          className="absolute top-4 -left-14 w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center border-zinc-700 hover:bg-zinc-700 transition-colors"
         >
-          <div className="w-1 h-8 bg-zinc-500 rounded-full" />
+          <Logs className="w-6 h-6 bg-transparent" />
         </button>
 
         <div className="p-6 border-b border-zinc-800">
-          <h2 className="text-xl font-bold tracking-tight">{dict.drawer.renderQueue}</h2>
+          <h2 className="text-xl font-bold tracking-tight">
+            {dict.drawer.renderQueue}
+          </h2>
           <p className="text-xs text-zinc-500 mt-1">{queue.length} tasks</p>
         </div>
 
@@ -95,16 +98,22 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
               <div className="space-y-3 pt-1 pb-1">
                 <StageItem
                   label="Decoding"
-                  isActive={task.status === "analyzing" && !task.stageTimestamps.decoding?.end}
+                  isActive={
+                    task.status === "analyzing" &&
+                    !task.stageTimestamps.decoding?.end
+                  }
                   isDone={!!task.stageTimestamps.decoding?.end}
                   timestamps={task.stageTimestamps.decoding}
                 />
 
-                {task.settings.encoder === 'ffmpeg' && (
+                {task.settings.encoder === "ffmpeg" && (
                   <StageItem
                     label="Generating Frames"
                     progress={task.stageProgress.physics}
-                    isActive={task.status === "rendering_frames" && !task.stageTimestamps.physics?.end}
+                    isActive={
+                      task.status === "rendering_frames" &&
+                      !task.stageTimestamps.physics?.end
+                    }
                     isDone={!!task.stageTimestamps.physics?.end}
                     timestamps={task.stageTimestamps.physics}
                   />
@@ -172,14 +181,14 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
                   <h3 className="text-lg font-bold text-white mb-1">
                     {queue.find((t) => t.id === taskToCancel)?.status ===
                       "done" ||
-                      queue.find((t) => t.id === taskToCancel)?.status === "error"
+                    queue.find((t) => t.id === taskToCancel)?.status === "error"
                       ? dict.drawer.removeTask
                       : dict.drawer.cancelRendering}
                   </h3>
                   <p className="text-sm text-zinc-400">
                     {queue.find((t) => t.id === taskToCancel)?.status ===
                       "done" ||
-                      queue.find((t) => t.id === taskToCancel)?.status === "error"
+                    queue.find((t) => t.id === taskToCancel)?.status === "error"
                       ? dict.drawer.removeTaskConfirm
                       : dict.drawer.cancelTaskConfirm}
                   </p>
@@ -197,7 +206,7 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
                   >
                     {queue.find((t) => t.id === taskToCancel)?.status ===
                       "done" ||
-                      queue.find((t) => t.id === taskToCancel)?.status === "error"
+                    queue.find((t) => t.id === taskToCancel)?.status === "error"
                       ? dict.drawer.yesRemove
                       : dict.drawer.yesCancel}
                   </button>
@@ -216,61 +225,80 @@ const StageItem = ({
   progress,
   isActive,
   isDone,
-  timestamps
+  timestamps,
 }: {
-  label: string;
-  progress?: number;
-  isActive: boolean;
-  isDone: boolean;
-  timestamps?: { start: number; end?: number };
+  label: string
+  progress?: number
+  isActive: boolean
+  isDone: boolean
+  timestamps?: { start: number; end?: number }
 }) => {
-  const [elapsed, setElapsed] = useState("00:00");
+  const [elapsed, setElapsed] = useState("00:00")
 
   useEffect(() => {
-    let interval: any;
+    let interval: any
     if (isActive && timestamps?.start && !isDone) {
-      const diff = Date.now() - timestamps.start;
-      setElapsed(formatDuration(diff));
+      const diff = Date.now() - timestamps.start
+      setElapsed(formatDuration(diff))
 
       interval = setInterval(() => {
-        const diff = Date.now() - timestamps.start;
-        setElapsed(formatDuration(diff));
-      }, 1000);
+        const diff = Date.now() - timestamps.start
+        setElapsed(formatDuration(diff))
+      }, 1000)
     } else if (timestamps?.start && timestamps?.end) {
-      setElapsed(formatDuration(timestamps.end - timestamps.start));
+      setElapsed(formatDuration(timestamps.end - timestamps.start))
     } else {
-      setElapsed("00:00");
+      setElapsed("00:00")
     }
-    return () => clearInterval(interval);
-  }, [isActive, isDone, timestamps]);
+    return () => clearInterval(interval)
+  }, [isActive, isDone, timestamps])
 
   const displayLabel = isDone
-    ? (label === 'Decoding' ? 'Decoded' :
-      label === 'Generating Frames' ? 'Generated' :
-        label === 'Rendering' ? 'Rendered' :
-          label === 'Mixing' ? 'Mixed' : label)
-    : label;
+    ? label === "Decoding"
+      ? "Decoded"
+      : label === "Generating Frames"
+        ? "Generated"
+        : label === "Rendering"
+          ? "Rendered"
+          : label === "Mixing"
+            ? "Mixed"
+            : label
+    : label
 
   return (
-    <div className={`space-y-1.5 transition-opacity duration-300 ${!isActive && !isDone ? 'opacity-30' : 'opacity-100'}`}>
+    <div
+      className={`space-y-1.5 transition-opacity duration-300 ${!isActive && !isDone ? "opacity-30" : "opacity-100"}`}
+    >
       <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className={`${isActive ? 'text-zinc-100' : isDone ? 'text-emerald-500' : 'text-zinc-500'} flex items-center gap-1.5 truncate`}>
-            {isDone ? <CheckCircle2 size={10} /> : <div className={`w-1 h-1 rounded-full ${isActive ? 'bg-zinc-100 animate-pulse' : 'bg-zinc-600'}`} />}
+          <span
+            className={`${isActive ? "text-zinc-100" : isDone ? "text-emerald-500" : "text-zinc-500"} flex items-center gap-1.5 truncate`}
+          >
+            {isDone ? (
+              <CheckCircle2 size={10} />
+            ) : (
+              <div
+                className={`w-1 h-1 rounded-full ${isActive ? "bg-zinc-100 animate-pulse" : "bg-zinc-600"}`}
+              />
+            )}
             {displayLabel}
           </span>
           {progress !== undefined && !isDone && (
-            <span className={isActive ? 'text-zinc-300' : 'text-zinc-600'}>{progress}%</span>
+            <span className={isActive ? "text-zinc-300" : "text-zinc-600"}>
+              {progress}%
+            </span>
           )}
         </div>
-        <span className={`${isActive ? 'text-zinc-100' : 'text-zinc-500'} tabular-nums shrink-0`}>
+        <span
+          className={`${isActive ? "text-zinc-100" : "text-zinc-500"} tabular-nums shrink-0`}
+        >
           {elapsed}
         </span>
       </div>
       {progress !== undefined && !isDone && (
         <div className="h-1 bg-zinc-800/50 rounded-full overflow-hidden">
           <motion.div
-            className={`h-full ${isActive ? 'bg-zinc-200' : 'bg-zinc-700'}`}
+            className={`h-full ${isActive ? "bg-zinc-200" : "bg-zinc-700"}`}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ type: "spring", bounce: 0, duration: 0.5 }}
@@ -282,11 +310,11 @@ const StageItem = ({
 }
 
 const formatDuration = (ms: number) => {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-};
+  const totalSeconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+}
 
 const StatusIcon = ({ status }: { status: RenderTask["status"] }) => {
   switch (status) {
