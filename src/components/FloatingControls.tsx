@@ -84,11 +84,11 @@ export const FloatingControls = ({
 
   return (
     <div
-      className="fixed bottom-0 left-0 w-full flex flex-col items-center justify-end pb-8 pointer-events-none z-60"
+      className="fixed bottom-0 left-0 w-full flex flex-col items-center justify-end pointer-events-none z-60"
       style={{ height: "100vh" }}
     >
       <div
-        className="flex flex-col items-center pointer-events-auto"
+        className="relative w-full flex flex-col items-center pointer-events-auto after:absolute after:bottom-0 after:w-full after:h-[100px] after:bg-transparent after:-z-10"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
@@ -98,7 +98,7 @@ export const FloatingControls = ({
               initial={{ y: 420 }}
               animate={{ y: isHovering || isPinned ? 0 : 420 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="bg-zinc-950/20 backdrop-blur-sm border border-zinc-800 rounded-3xl p-6 shadow-2xl w-[1800px] flex flex-col gap-4 -mb-17"
+              className="bg-zinc-950/20 backdrop-blur-sm border border-zinc-800 rounded-3xl p-6 shadow-2xl w-[1800px] flex flex-col gap-4 -mb-9"
             >
               <div className="w-full space-y-2">
                 <div className="flex justify-between items-center text-xs font-mono text-zinc-400 relative">
@@ -639,19 +639,16 @@ export const FloatingControls = ({
         </AnimatePresence>
 
         <div className="relative z-50">
-          <motion.button
-            initial={{ y: -30 }}
-            animate={{ y: isHovering || isPinned ? -30 : -30 }}
-            transition={{ type: "tween", duration: 0.1 }}
+          <button
             onClick={onTogglePlay}
-            className="w-16 h-16 bg-white  rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform"
+            className="w-16 h-16 bg-white -translate-y-[40px]  rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform"
           >
             {isPlaying ? (
               <Pause className="text-black" fill="#000000" />
             ) : (
               <Play className="text-black ml-0.5" fill="#000000" />
             )}
-          </motion.button>
+          </button>
         </div>
       </div>
     </div>
