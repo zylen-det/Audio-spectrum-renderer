@@ -124,6 +124,24 @@ export default function App() {
     load()
   }, [])
 
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // alert when queue
+      if (queue.length > 0 || files.length > 0) {
+        e.preventDefault()
+        // routine, set returnValue
+        e.returnValue = "工作進度不被保存"
+        return e.returnValue
+      }
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+    }
+  }, [queue.length, files.length])
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -352,7 +370,7 @@ export default function App() {
           navigate(segments.join("/"))
         }}
       >
-        {lang === "en" ? "中文" : "EN"}
+        {lang === "zh" ? "中文" : "EN"}
       </PopOutButton>
     </div>
   )
