@@ -1,0 +1,118 @@
+import React, { useEffect, useRef } from "react"
+import { VisualizerSettings } from "../types"
+import { drawFrame } from "../utils/renderUtils"
+import {
+  calculateBarHeights,
+  generateFrequencyBands,
+  performFFT,
+  FFT_SIZE,
+  applyWindowingToFrame,
+} from "../utils/audioMath"
+
+interface VisualizerProps {
+  settings: VisualizerSettings
+  analyser: AnalyserNode | null
+  isPlaying: boolean
+}
+
+export const Visualizer: React.FC<VisualizerProps> = ({
+  settings,
+  analyser,
+  isPlaying,
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const animationRef = useRef<number>(0)
+  const currentHeightsRef = useRef<number[]>([])
+  const lastTimeRef = useRef<number>(performance.now())
+
+  useEffect(() => {
+    if (currentHeightsRef.current.length !== settings.barCount) {
+      currentHeightsRef.current = new Array(settings.barCount).fill(0)
+      const time = Date.now() / 1000
+      for (let i = 0; i < settings.barCount; i++) {
+        const val = Math.sin(i * 0.5 + time) * 0.05 + 0.1
+        currentHeightsRef.current[i] = val * settings.barHeightMultiplier
+      }
+    }
+  }, [settings.barCount, settings.barHeightMultiplier])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    const dpr = window.devicePixelRatio || 1
+    const rect = canvas.getBoundingClientRect()
+    canvas.width = rect.width * dpr
+    canvas.height = rect.height * dpr
+    ctx.scale(dpr, dpr)
+
+    const bands = generateFrequencyBands(
+      settings.barCount,
+      analyser?.context.sampleRate || 44100,
+      FFT_SIZE,
+      settings.minFreq,
+      settings.maxFreq,
+    )
+
+    const render = (time: number) => {
+      const dt = Math.min(0.1, (time - lastTimeRef.current) / 1000)
+      lastTimeRef.current = time
+
+      ctx.fillStyle = settings.backgroundColor
+      ctx.fillRect(0, 0, rect.width, rect.height)
+
+      if (isPlaying && analyser) {
+        const timeData = new Float32Array(FFT_SIZE)
+        analyser.getFloatTimeDomainData(timeData)
+
+        const { real, imag } = applyWindowingToFrame(timeData, FFT_SIZE)
+        performFFT(real, imag)
+
+        currentHeightsRef.current = calculateBarHeights(
+          real,
+          imag,
+          bands,
+          settings,
+          currentHeightsRef.current,
+        )
+      } else {
+        const idleSpeed = dt * 10
+        const idleTime = time / 1000
+        for (let i = 0; i < settings.barCount; i++) {
+          const val = Math.sin(i * 0.5 + idleTime) * 0.05 + 0.1
+          const target = val * settings.barHeightMultiplier
+          currentHeightsRef.current[i] +=
+            (target - currentHeightsRef.current[i]) * idleSpeed
+        }
+      }
+
+      drawFrame(
+        ctx,
+        currentHeightsRef.current,
+        settings,
+        rect.width,
+        rect.height,
+      )
+      animationRef.current = requestAnimationFrame(render)
+    }
+
+    lastTimeRef.current = performance.now()
+    animationRef.current = requestAnimationFrame(render)
+
+    return () => cancelAnimationFrame(animationRef.current)
+  }, [settings, analyser, isPlaying])
+
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full max-w-[1280px] max-h-[720px]"
+        style={{ width: "100%", height: "100%" }}
+      />
+    </div>
+  )
+}
+
+export default Visualizer
