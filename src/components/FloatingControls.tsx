@@ -95,7 +95,7 @@ export const FloatingControls = ({
         <AnimatePresence>
           {
             <motion.div
-              initial={{ y: 270 }}
+              initial={{ y: 420 }}
               animate={{ y: isHovering || isPinned ? 0 : 420 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="bg-zinc-950/20 backdrop-blur-sm border border-zinc-800 rounded-3xl p-6 shadow-2xl w-[1800px] flex flex-col gap-4 -mb-17"
