@@ -50,7 +50,7 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
       >
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="absolute top-4 -left-14 w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center border-zinc-700 hover:bg-zinc-700 transition-colors"
+          className="absolute top-4 -left-14 w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center border-zinc-800 hover:bg-zinc-800 transition-colors"
         >
           <Logs className="w-6 h-6 bg-transparent" />
         </button>

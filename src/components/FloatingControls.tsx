@@ -98,7 +98,7 @@ export const FloatingControls = ({
               initial={{ y: 420 }}
               animate={{ y: isHovering || isPinned ? 0 : 420 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="bg-zinc-950/20 backdrop-blur-sm border border-zinc-800 rounded-3xl p-6 shadow-2xl w-[1800px] flex flex-col gap-4 -mb-9"
+              className="bg-zinc-950/20 backdrop-blur-sm border border-zinc-800 rounded-3xl p-6 shadow-2xl max-w-[1800px] flex flex-col gap-4 -mb-9"
             >
               <div className="w-full space-y-2">
                 <div className="flex justify-between items-center text-xs font-mono text-zinc-400 relative">
