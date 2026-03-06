@@ -1,6 +1,6 @@
 import { VisualizerSettings } from "../types"
 
-export const FFT_SIZE = 2048
+export const FFT_SIZE = 4096
 export const MIN_FREQ = 20
 export const MAX_FREQ = 16000
 
@@ -14,7 +14,7 @@ export function generateFrequencyBands(
   sampleRate: number,
   fftSize: number = FFT_SIZE,
   minFreq: number = MIN_FREQ,
-  maxFreq: number = MAX_FREQ
+  maxFreq: number = MAX_FREQ,
 ): FrequencyBand[] {
   const bands: FrequencyBand[] = []
   for (let i = 0; i < barCount; i++) {
@@ -33,7 +33,7 @@ export function performFFT(real: Float32Array, imag: Float32Array) {
   for (let i = 0; i < n; i++) {
     if (i < j) {
       ;[real[i], real[j]] = [real[j], real[i]]
-        ;[imag[i], imag[j]] = [imag[j], imag[i]]
+      ;[imag[i], imag[j]] = [imag[j], imag[i]]
     }
     let m = n >> 1
     while (m >= 1 && j >= m) {
@@ -76,7 +76,7 @@ export function calculateBarHeights(
   bands: FrequencyBand[],
   settings: VisualizerSettings,
   currentHeights: number[],
-  dt?: number
+  dt?: number,
 ): number[] {
   const fftSize = real.length
   const newHeights = [...currentHeights]
@@ -118,14 +118,14 @@ export function calculateBarHeights(
     if (target > newHeights[b]) {
       newHeights[b] += (target - newHeights[b]) * ATTACK
     } else {
-      let nextValue = newHeights[b] * DECAY;
+      let nextValue = newHeights[b] * DECAY
 
-      const maxDropRatio = 1;
+      const maxDropRatio = 1
       if (newHeights[b] - nextValue > newHeights[b] * maxDropRatio) {
-        nextValue = newHeights[b] * (1 - maxDropRatio);
+        nextValue = newHeights[b] * (1 - maxDropRatio)
       }
 
-      newHeights[b] = nextValue;
+      newHeights[b] = nextValue
     }
     newHeights[b] = Math.max(0, newHeights[b])
   }
@@ -142,7 +142,7 @@ export function getHanningWindowValue(index: number, fftSize: number): number {
 
 export function applyWindowingToFrame(
   timeData: Float32Array,
-  fftSize: number = FFT_SIZE
+  fftSize: number = FFT_SIZE,
 ): { real: Float32Array; imag: Float32Array } {
   const real = new Float32Array(fftSize)
   const imag = new Float32Array(fftSize)
@@ -164,7 +164,7 @@ export function getMaxMagnitudeInBand(
   real: Float32Array,
   imag: Float32Array,
   startBin: number,
-  endBin: number
+  endBin: number,
 ): number {
   let maxMag = 0
   const limit = Math.min(endBin, real.length / 2)
