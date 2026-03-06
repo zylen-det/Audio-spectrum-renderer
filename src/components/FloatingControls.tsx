@@ -83,31 +83,25 @@ export const FloatingControls = ({
   }
 
   return (
-    <div
-      className="fixed bottom-0 left-0 w-full flex flex-col items-center justify-end pointer-events-none z-60"
-      style={{ height: "100vh" }}
-    >
+    <div className="fixed bottom-0 left-0 w-full z-60 pointer-events-none">
       <div
-        className="relative w-full flex flex-col items-center pointer-events-auto after:absolute after:bottom-0 after:w-full after:h-[100px] after:bg-transparent after:-z-10"
+        className="absolute bottom-0 w-full pointer-events-auto duration-300 ease-in"
+        style={{
+          height: isHovering || isPinned ? "460px" : "27px",
+          // outline: "1px solid red", // 測試確認無誤後可移除
+        }}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
-        <AnimatePresence>
-          {
+        <div className="absolute bottom-0 w-full flex flex-col items-center pointer-events-none">
+          <AnimatePresence>
             <motion.div
-              initial={{ y: 420 }}
-              animate={{ y: isHovering || isPinned ? 0 : 420 }}
+              initial={{ y: 400 }}
+              animate={{ y: isHovering || isPinned ? 0 : 400 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="bg-zinc-950/20 backdrop-blur-sm border border-zinc-800 rounded-3xl p-6 shadow-2xl max-w-[1800px] flex flex-col gap-4 -mb-9"
+              className="pointer-events-auto bg-zinc-950/20 backdrop-blur-sm border border-zinc-800 rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4 -mb-9"
             >
               <div className="w-full space-y-2">
-                <div className="flex justify-between items-center text-xs font-mono text-zinc-400 relative">
-                  <span>{formatTime(currentTime)}</span>
-                  <span className="absolute left-1/2 -translate-x-1/2 text-zinc-200 font-sans truncate max-w-[1000px] tracking-wide">
-                    {currentFileName || dict.drawer.noFiles}
-                  </span>
-                  <span>{formatTime(duration)}</span>
-                </div>
                 <input
                   type="range"
                   min="0"
@@ -119,6 +113,13 @@ export const FloatingControls = ({
                   style={{ backgroundSize: `${progressPercentage}% 100%` }}
                   className="w-full accent-white h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer hover:h-2 hide-thumb slider-progress"
                 />
+                <div className="flex justify-between items-center text-xs font-mono text-zinc-400 relative">
+                  <span>{formatTime(currentTime)}</span>
+                  <span className="absolute left-1/2 -translate-x-1/2 text-zinc-200 font-sans truncate max-w-[1000px] tracking-wide">
+                    {currentFileName || dict.drawer.noFiles}
+                  </span>
+                  <span>{formatTime(duration)}</span>
+                </div>
               </div>
 
               <div className="grid grid-cols-8 gap-x-6 gap-y-2 items-start">
@@ -656,20 +657,20 @@ export const FloatingControls = ({
                 </div>
               </div>
             </motion.div>
-          }
-        </AnimatePresence>
+          </AnimatePresence>
 
-        <div className="relative z-50">
-          <button
-            onClick={onTogglePlay}
-            className="w-16 h-16 bg-white -translate-y-[40px]  rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform"
-          >
-            {isPlaying ? (
-              <Pause className="text-black" fill="#000000" />
-            ) : (
-              <Play className="text-black ml-0.5" fill="#000000" />
-            )}
-          </button>
+          <div className="relative z-50">
+            <button
+              onClick={onTogglePlay}
+              className="w-16 h-16 bg-white -translate-y-[60px]  rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform"
+            >
+              {isPlaying ? (
+                <Pause className="text-black" fill="#000000" />
+              ) : (
+                <Play className="text-black ml-0.5" fill="#000000" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
