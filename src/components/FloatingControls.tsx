@@ -99,7 +99,7 @@ export const FloatingControls = ({
               initial={{ y: 400 }}
               animate={{ y: isHovering || isPinned ? 0 : 400 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="pointer-events-auto bg-zinc-950/20 backdrop-blur-sm border border-zinc-800 rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4 -mb-9"
+              className="pointer-events-auto bg-zinc-950/20 backdrop-blur-sm border border-zinc-800 rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4 mb-6"
             >
               <div className="w-full space-y-2">
                 <input
@@ -658,19 +658,6 @@ export const FloatingControls = ({
               </div>
             </motion.div>
           </AnimatePresence>
-
-          <div className="relative z-50">
-            <button
-              onClick={onTogglePlay}
-              className="w-16 h-16 bg-white -translate-y-[60px]  rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform"
-            >
-              {isPlaying ? (
-                <Pause className="text-black" fill="#000000" />
-              ) : (
-                <Play className="text-black ml-0.5" fill="#000000" />
-              )}
-            </button>
-          </div>
         </div>
       </div>
     </div>

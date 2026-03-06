@@ -15,6 +15,7 @@ import { generateASSHeader, generateASSFrame } from "../../utils/assUtils"
 import { runVideoRender } from "../../utils/videoRenderer"
 import { motion } from "motion/react"
 import { PopOutButton } from "../../components/PopOutButton"
+import { PlayButton } from "../../components/PlayButton"
 
 export const DEFAULT_SETTINGS: VisualizerSettings = {
   barCount: 24,
@@ -372,6 +373,8 @@ export default function App() {
       >
         {lang === "zh" ? "中文" : "EN"}
       </PopOutButton>
+
+      <PlayButton onClick={togglePlay} isPlaying={isPlaying}></PlayButton>
     </div>
   )
 }
