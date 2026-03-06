@@ -4,17 +4,24 @@ import { VisualizerSettings, RenderTask } from "../types"
 import { drawFrame } from "./renderUtils"
 import { generateASSHeader, generateASSFrame } from "./assUtils"
 
+type UpdateProgressFn = (updates: {
+    status?: RenderTask["status"],
+    progress?: number,
+    stageProgress?: Partial<RenderTask["stageProgress"]>,
+    stageTimestamp?: { stage: keyof RenderTask["stageTimestamps"], type: 'start' | 'end' }
+}) => void;
+
 export async function runVideoRender(
     task: RenderTask,
     file: File,
     ffmpeg: FFmpeg,
-    updateProgress: (updates: {
-        status?: RenderTask["status"],
-        progress?: number,
-        stageProgress?: Partial<RenderTask["stageProgress"]>,
-        stageTimestamp?: { stage: keyof RenderTask["stageTimestamps"], type: 'start' | 'end' }
-    }) => void,
+    updateProgressOriginal: UpdateProgressFn,
 ): Promise<string> {
+    const updateProgress: UpdateProgressFn = (updates) => {
+        console.log("[Render State]", updates);
+        updateProgressOriginal(updates);
+    };
+
     updateProgress({ status: "analyzing", stageTimestamp: { stage: 'decoding', type: 'start' } })
 
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
@@ -26,6 +33,9 @@ export async function runVideoRender(
     const duration = buffer.duration
 
     let spectrumData: number[][] = []
+
+    updateProgress({ status: "rendering_frames" })
+
     if (!task.settings.encoder.startsWith("webcodecs")) {
         updateProgress({ stageTimestamp: { stage: 'physics', type: 'start' } })
         spectrumData = await simulatePhysics(
@@ -37,7 +47,7 @@ export async function runVideoRender(
         )
         updateProgress({ stageTimestamp: { stage: 'physics', type: 'end' } })
     }
-    updateProgress({ status: "rendering_frames", stageTimestamp: { stage: 'rendering', type: 'start' } })
+    updateProgress({ stageTimestamp: { stage: 'rendering', type: 'start' } })
 
     const width = 1280
     const height = 720
@@ -54,12 +64,7 @@ export async function runVideoRender(
             height,
             duration,
             isHardware,
-            (p) => updateProgress({
-                stageProgress: {
-                    physics: p,
-                    rendering: p
-                }
-            }),
+            updateProgress
         )
     } else {
         videoBlobUrl = await renderWithFFmpegSoftware(
@@ -69,14 +74,12 @@ export async function runVideoRender(
             ffmpeg,
             width,
             height,
+            duration,
             task.fileName,
-            (p) => updateProgress({ stageProgress: { rendering: p } }),
+            updateProgress
         )
     }
 
-    updateProgress({ stageTimestamp: { stage: 'rendering', type: 'end' } })
-    updateProgress({ status: "encoding", stageTimestamp: { stage: 'mixing', type: 'start' } })
-    await new Promise(r => setTimeout(r, 100))
     updateProgress({ status: "done", stageTimestamp: { stage: 'mixing', type: 'end' } })
     return videoBlobUrl
 }
@@ -131,7 +134,7 @@ async function renderWithWebCodecs(
     height: number,
     duration: number,
     preferHardware: boolean,
-    onProgress: (percent: number) => void,
+    updateProgress: UpdateProgressFn,
 ): Promise<string> {
     const worker = new Worker(
         new URL("../workers/videoWorker.ts", import.meta.url),
@@ -150,7 +153,13 @@ async function renderWithWebCodecs(
                 worker.terminate()
                 resolve(e.data.payload)
             } else if (e.data.type === "PROGRESS") {
-                onProgress(Math.round(e.data.payload * 100))
+                const p = Math.round(e.data.payload * 100)
+                updateProgress({
+                    stageProgress: {
+                        physics: p,
+                        rendering: p
+                    }
+                })
             } else if (e.data.type === "ERROR") {
                 worker.terminate()
                 reject(new Error("Worker Error: " + e.data.payload))
@@ -171,12 +180,23 @@ async function renderWithWebCodecs(
         }, [channelData.buffer])
     })
 
-    onProgress(0.6)
+    updateProgress({ stageTimestamp: { stage: 'rendering', type: 'end' } })
+    updateProgress({ status: "encoding", stageTimestamp: { stage: 'mixing', type: 'start' } })
 
     await ffmpeg.writeFile("video_only.mp4", new Uint8Array(videoBuffer))
     await ffmpeg.writeFile("audio.ext", await fetchFile(audioFile))
 
-    onProgress(0.7)
+    const onFFmpegProgress = ({ progress, time }: any) => {
+        console.log("[FFmpeg HW] progress:", progress, "time:", time);
+        if (progress >= 0 && progress <= 1) {
+            updateProgress({ stageProgress: { mixing: Math.min(100, Math.max(0, Math.round(progress * 100))) } })
+        } else if (time !== undefined && duration > 0) {
+            const timeSeconds = typeof time === "number" ? time / 1000000 : 0;
+            const fallbackProgress = timeSeconds / duration;
+            updateProgress({ stageProgress: { mixing: Math.min(100, Math.max(0, Math.round(fallbackProgress * 100))) } })
+        }
+    }
+    ffmpeg.on("progress", onFFmpegProgress)
 
     await ffmpeg.exec([
         "-i", "video_only.mp4",
@@ -188,7 +208,9 @@ async function renderWithWebCodecs(
         "final_hw.mp4"
     ])
 
-    onProgress(0.9)
+    ffmpeg.off("progress", onFFmpegProgress)
+    updateProgress({ stageProgress: { mixing: 100 } })
+
     const data = await ffmpeg.readFile("final_hw.mp4")
     return URL.createObjectURL(new Blob([(data as Uint8Array).buffer as any], { type: "video/mp4" }))
 }
@@ -200,8 +222,9 @@ async function renderWithFFmpegSoftware(
     ffmpeg: FFmpeg,
     width: number,
     height: number,
+    duration: number,
     fileName: string,
-    onProgress: (percent: number) => void,
+    updateProgress: UpdateProgressFn,
 ): Promise<string> {
     const fps = settings.renderFps || 30
     let assContent = generateASSHeader(width, height, fileName)
@@ -210,8 +233,11 @@ async function renderWithFFmpegSoftware(
         const startTime = i / fps
         const endTime = (i + 1) / fps
         assContent += generateASSFrame(startTime, endTime, spectrumData[i], settings, width, height)
-        if (i % 100 === 0) onProgress(Math.round((i / spectrumData.length) * 100))
+        if (i % 100 === 0) updateProgress({ stageProgress: { rendering: Math.round((i / spectrumData.length) * 100) } })
     }
+
+    updateProgress({ stageTimestamp: { stage: 'rendering', type: 'end' } })
+    updateProgress({ status: "encoding", stageTimestamp: { stage: 'mixing', type: 'start' } })
 
     const fontRes = await fetch("/Roboto.ttf")
     const fontBuffer = await fontRes.arrayBuffer()
@@ -220,7 +246,17 @@ async function renderWithFFmpegSoftware(
     await ffmpeg.writeFile("audio.ext", await fetchFile(audioFile))
     await ffmpeg.writeFile("subtitles.ass", assContent)
 
-    onProgress(0.5)
+    const onFFmpegProgress = ({ progress, time }: any) => {
+        console.log("[FFmpeg SW] progress:", progress, "time:", time);
+        if (progress > 0 && progress <= 1) {
+            updateProgress({ stageProgress: { mixing: Math.min(100, Math.max(0, Math.round(progress * 100))) } })
+        } else if (time !== undefined && duration > 0) {
+            const timeSeconds = typeof time === "number" ? time / 1000000 : 0;
+            const fallbackProgress = timeSeconds / duration;
+            updateProgress({ stageProgress: { mixing: Math.min(100, Math.max(0, Math.round(fallbackProgress * 100))) } })
+        }
+    }
+    ffmpeg.on("progress", onFFmpegProgress)
 
     await ffmpeg.exec([
         "-f", "lavfi",
@@ -235,7 +271,9 @@ async function renderWithFFmpegSoftware(
         "final_sw.mp4",
     ])
 
-    onProgress(0.9)
+    ffmpeg.off("progress", onFFmpegProgress)
+    updateProgress({ stageProgress: { mixing: 100 } })
+
     const data = await ffmpeg.readFile("final_sw.mp4")
     return URL.createObjectURL(new Blob([(data as Uint8Array).buffer as any], { type: "video/mp4" }))
 }

@@ -40,12 +40,12 @@ import {
         isHardware,
         (p) => (self as any).postMessage({ type: "PROGRESS", payload: p }),
       )
-      ;(self as any).postMessage(
-        { type: "RENDER_COMPLETE", payload: videoBuffer },
-        [videoBuffer],
-      )
+        ; (self as any).postMessage(
+          { type: "RENDER_COMPLETE", payload: videoBuffer },
+          [videoBuffer],
+        )
     } catch (err: any) {
-      ;(self as any).postMessage({ type: "ERROR", payload: err.message })
+      ; (self as any).postMessage({ type: "ERROR", payload: err.message })
     }
   }
 }
@@ -63,11 +63,12 @@ async function runVideoProcessing(
   const fps = settings.renderFps || 60
 
   const codecCandidates = [
-    "avc1.4D4020",
-    "avc1.4D401F",
-    "avc1.42E01F",
-    "avc1.640028",
-    "avc1.42001e",
+    "avc1.640028", // High Profile 4.0
+    "avc1.64001F", // High Profile 3.1
+    "avc1.4D4020", // Main Profile 3.2
+    "avc1.4D401F", // Main Profile 3.1
+    "avc1.42E01F", // Baseline Profile 3.1
+    "avc1.42001e", // Baseline Profile 3.0
   ]
 
   let encoderConfig: VideoEncoderConfig | null = null
@@ -108,6 +109,8 @@ async function runVideoProcessing(
   if (!encoderConfig) {
     throw new Error("No supported H.264 profile found in worker.")
   }
+
+  console.log("[WebCodecs] Accepted config: ", encoderConfig)
 
   const target = new BufferTarget()
   const output = new Output({
