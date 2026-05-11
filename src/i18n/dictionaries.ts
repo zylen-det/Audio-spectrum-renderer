@@ -70,6 +70,11 @@ export const dictionaries = {
       frequencyRange: "Frequency Range",
       greenScreen: "Green Screen",
       enable: "Enable",
+      prev: "Previous",
+      next: "Next",
+      volume: "Volume",
+      mute: "Mute",
+      unmute: "Unmute",
     },
     drawer: {
       audioFiles: "Audio Files",
@@ -151,6 +156,11 @@ export const dictionaries = {
       frequencyRange: "波形頻率範圍",
       greenScreen: "綠幕",
       enable: "啟用",
+      prev: "上一首",
+      next: "下一首",
+      volume: "音量",
+      mute: "靜音",
+      unmute: "取消靜音",
     },
     drawer: {
       audioFiles: "音頻庫",

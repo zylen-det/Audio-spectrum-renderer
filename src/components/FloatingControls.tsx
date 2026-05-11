@@ -1,11 +1,12 @@
-import React, { useState } from "react"
+import React from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { VisualizerSettings } from "../types"
-import { Play, Pause, RotateCcw, Pin, PinOff } from "lucide-react"
+import { RotateCcw } from "lucide-react"
 import { SettingInput } from "./SettingInput"
 import { DEFAULT_SETTINGS } from "../app/[lang]/App"
 import { useI18n } from "../app/[lang]/i18nContext"
 import { Range, getTrackBackground } from "react-range"
+import { Settings } from "lucide-react";
 
 interface FloatingControlsProps {
   isPlaying: boolean
@@ -16,24 +17,20 @@ interface FloatingControlsProps {
   currentTime: number
   duration: number
   onSeek: (time: number) => void
-  currentFileName?: string
+  visible: boolean
 }
 
-export const FloatingControls = ({
-  isPlaying,
-  onTogglePlay,
+export function FloatingControls({
   onRender,
   settings,
   onSettingsChange,
   currentTime,
   duration,
-  onSeek,
-  currentFileName,
-}: FloatingControlsProps) => {
+  visible,
+}: FloatingControlsProps) {
   const { t: dict } = useI18n()
-  const [isHovering, setIsHovering] = useState(false)
-  const [isPinned, setIsPinned] = useState(false)
 
+  // --- settings helpers ---
   const updateSetting = <K extends keyof VisualizerSettings>(
     key: K,
     value: VisualizerSettings[K],
@@ -83,42 +80,160 @@ export const FloatingControls = ({
   }
 
   return (
-    <div className="fixed bottom-0 left-0 w-full z-60 pointer-events-none">
+    <div className="fixed top-2 left-0 w-full z-30 pointer-events-none">
       <div
-        className="absolute bottom-0 w-full pointer-events-auto duration-300 ease-in"
-        style={{
-          height: isHovering || isPinned ? "460px" : "27px",
-          // outline: "1px solid red", // 測試確認無誤後可移除
-        }}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
+        className="absolute top-0 w-full pointer-events-auto duration-300 ease-in"
       >
-        <div className="absolute bottom-0 w-full flex flex-col items-center pointer-events-none">
+        <div className="absolute top-0 w-full flex flex-col items-center pointer-events-none">
           <AnimatePresence>
             <motion.div
-              initial={{ y: 400 }}
-              animate={{ y: isHovering || isPinned ? 0 : 400 }}
+              initial={{ y: -420 }}
+              animate={{ y: visible ? 0 : -420 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="pointer-events-auto bg-zinc-950/20 backdrop-blur-sm border border-zinc-800 rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4 mb-6"
             >
-              <div className="w-full space-y-2">
-                <input
-                  type="range"
-                  min="0"
-                  max={duration || 100}
-                  value={currentTime}
-                  onChange={(e) => {
-                    onSeek(Number(e.target.value))
-                  }}
-                  style={{ backgroundSize: `${progressPercentage}% 100%` }}
-                  className="w-full accent-white h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer hover:h-2 hide-thumb slider-progress"
-                />
-                <div className="flex justify-between items-center text-xs font-mono text-zinc-400 relative">
-                  <span>{formatTime(currentTime)}</span>
-                  <span className="absolute left-1/2 -translate-x-1/2 text-zinc-200 font-sans truncate max-w-[1000px] tracking-wide">
-                    {currentFileName || dict.drawer.noFiles}
-                  </span>
-                  <span>{formatTime(duration)}</span>
+
+              <div className="flex justify-between items-end pb-4 border-b border-zinc-800 mt-2">
+                <div className="flex flex-col">
+                  <button
+                    onClick={() => { }}
+                    className="w-10 h-10 mb-8 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-800 hover:bg-zinc-800 transition-colors z-100"
+                  >
+                    <Settings className="w-6 h-6 bg-transparent" />
+                  </button>
+
+                  <button
+                    onClick={resetAllSettings}
+                    className="text-xs font-bold text-zinc-500 hover:text-white uppercase transition-colors flex items-center gap-1"
+                  >
+                    <RotateCcw size={14} />
+                    {dict.controls.resetAll}
+                  </button>
+                </div>
+                <div className="flex gap-8 items-center bg-zinc-900/50 px-5 py-3 rounded-xl border border-zinc-800/50">
+                  <div className="w-48">
+                    <SettingInput
+                      label={dict.controls.renderFps}
+                      value={settings.renderFps || 60}
+                      onChange={(v) => updateSetting("renderFps", v)}
+                      onReset={() => resetSetting("renderFps")}
+                      min={1}
+                      max={60}
+                      step={1}
+                      unit="fps"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-bold text-zinc-500 uppercase">
+                      {dict.controls.greenScreen || "導出綠幕"}
+                    </label>
+                    <label className="relative flex items-center cursor-pointer gap-2 h-8">
+                      <input
+                        type="checkbox"
+                        checked={settings.backgroundColor == "#00FF00"}
+                        onChange={(e) => {
+                          updateSetting(
+                            "backgroundColor",
+                            e.target.checked ? "#00FF00" : "",
+                          )
+                        }}
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0"
+                      />
+                      <span className="text-xs text-zinc-300">
+                        {dict.controls.enable} ( #00FF00 )
+                      </span>
+                    </label>
+                  </div>
+                  <div className="w-56 space-y-2">
+                    <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
+                      {dict.controls.encoder}
+                      {typeof window !== "undefined" &&
+                        !("VideoEncoder" in window) && (
+                          <span className="text-[10px] text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">
+                            Unsupported
+                          </span>
+                        )}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={settings.encoder || "webcodecs-hw"}
+                        onChange={(e) =>
+                          updateSetting(
+                            "encoder",
+                            e.target.value as VisualizerSettings["encoder"],
+                          )
+                        }
+                        className="w-full bg-zinc-800/80 border border-zinc-700/80 rounded-lg pl-3 pr-8 py-1.5 text-xs text-zinc-200 outline-none focus:border-white/20 transition-colors cursor-pointer appearance-none"
+                      >
+                        <option
+                          value="webcodecs-hw"
+                          disabled={
+                            typeof window !== "undefined" &&
+                            !("VideoEncoder" in window)
+                          }
+                          title={
+                            typeof window !== "undefined" &&
+                              !("VideoEncoder" in window)
+                              ? "WebCodecs unsupported in this browser."
+                              : dict.controls.encoderDescription
+                                .webcodecHardware
+                          }
+                          className={
+                            typeof window !== "undefined" &&
+                              !("VideoEncoder" in window)
+                              ? "text-zinc-600"
+                              : ""
+                          }
+                        >
+                          WebCodec (Hardware)
+                        </option>
+                        <option
+                          value="webcodecs-sw"
+                          disabled={
+                            typeof window !== "undefined" &&
+                            !("VideoEncoder" in window)
+                          }
+                          title={
+                            typeof window !== "undefined" &&
+                              !("VideoEncoder" in window)
+                              ? "WebCodecs unsupported in this browser."
+                              : dict.controls.encoderDescription
+                                .webcodecSoftware
+                          }
+                          className={
+                            typeof window !== "undefined" &&
+                              !("VideoEncoder" in window)
+                              ? "text-zinc-600"
+                              : ""
+                          }
+                        >
+                          WebCodec (Software)
+                        </option>
+                        <option
+                          value="ffmpeg"
+                          title={dict.controls.encoderDescription.ffmpeg}
+                        >
+                          FFmpeg
+                        </option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-500">
+                        <svg
+                          className="fill-current h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={onRender}
+                    className="bg-white text-black px-8 py-2.5 rounded-full font-bold text-sm hover:bg-zinc-200 transition-colors shadow-lg active:scale-95"
+                  >
+                    {dict.common.render}
+                  </button>
                 </div>
               </div>
 
@@ -370,6 +485,7 @@ export const FloatingControls = ({
                       max={1.5}
                       step={0.05}
                     />
+
                     <SettingInput
                       title={dict.controls.strength_title}
                       label={dict.controls.strength}
@@ -507,155 +623,7 @@ export const FloatingControls = ({
                 </div>
               </div>
 
-              <div className="flex justify-between items-end pt-4 border-t border-zinc-800 mt-2">
-                <div className="flex gap-8 items-center bg-zinc-900/50 px-5 py-3 rounded-xl border border-zinc-800/50">
-                  <div className="w-48">
-                    <SettingInput
-                      label={dict.controls.renderFps}
-                      value={settings.renderFps || 60}
-                      onChange={(v) => updateSetting("renderFps", v)}
-                      onReset={() => resetSetting("renderFps")}
-                      min={1}
-                      max={60}
-                      step={1}
-                      unit="fps"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-bold text-zinc-500 uppercase">
-                      {dict.controls.greenScreen || "導出綠幕"}
-                    </label>
-                    <label className="relative flex items-center cursor-pointer gap-2 h-8">
-                      <input
-                        type="checkbox"
-                        checked={settings.backgroundColor == "#00FF00"}
-                        onChange={(e) => {
-                          updateSetting(
-                            "backgroundColor",
-                            e.target.checked ? "#00FF00" : "",
-                          )
-                        }}
-                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0"
-                      />
-                      <span className="text-xs text-zinc-300">
-                        {dict.controls.enable} ( #00FF00 )
-                      </span>
-                    </label>
-                  </div>
-                  <div className="w-56 space-y-2">
-                    <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
-                      {dict.controls.encoder}
-                      {typeof window !== "undefined" &&
-                        !("VideoEncoder" in window) && (
-                          <span className="text-[10px] text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">
-                            Unsupported
-                          </span>
-                        )}
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={settings.encoder || "webcodecs-hw"}
-                        onChange={(e) =>
-                          updateSetting(
-                            "encoder",
-                            e.target.value as VisualizerSettings["encoder"],
-                          )
-                        }
-                        className="w-full bg-zinc-800/80 border border-zinc-700/80 rounded-lg pl-3 pr-8 py-1.5 text-xs text-zinc-200 outline-none focus:border-white/20 transition-colors cursor-pointer appearance-none"
-                      >
-                        <option
-                          value="webcodecs-hw"
-                          disabled={
-                            typeof window !== "undefined" &&
-                            !("VideoEncoder" in window)
-                          }
-                          title={
-                            typeof window !== "undefined" &&
-                            !("VideoEncoder" in window)
-                              ? "WebCodecs unsupported in this browser."
-                              : dict.controls.encoderDescription
-                                  .webcodecHardware
-                          }
-                          className={
-                            typeof window !== "undefined" &&
-                            !("VideoEncoder" in window)
-                              ? "text-zinc-600"
-                              : ""
-                          }
-                        >
-                          WebCodec (Hardware)
-                        </option>
-                        <option
-                          value="webcodecs-sw"
-                          disabled={
-                            typeof window !== "undefined" &&
-                            !("VideoEncoder" in window)
-                          }
-                          title={
-                            typeof window !== "undefined" &&
-                            !("VideoEncoder" in window)
-                              ? "WebCodecs unsupported in this browser."
-                              : dict.controls.encoderDescription
-                                  .webcodecSoftware
-                          }
-                          className={
-                            typeof window !== "undefined" &&
-                            !("VideoEncoder" in window)
-                              ? "text-zinc-600"
-                              : ""
-                          }
-                        >
-                          WebCodec (Software)
-                        </option>
-                        <option
-                          value="ffmpeg"
-                          title={dict.controls.encoderDescription.ffmpeg}
-                        >
-                          FFmpeg
-                        </option>
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-500">
-                        <svg
-                          className="fill-current h-4 w-4"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="flex flex-col items-end gap-4 pb-1">
-                  <div className="flex gap-4">
-                    <button
-                      onClick={resetAllSettings}
-                      className="text-xs font-bold text-zinc-500 hover:text-white uppercase transition-colors flex items-center gap-1"
-                    >
-                      <RotateCcw size={14} />
-                      {dict.controls.resetAll}
-                    </button>
-                    <button
-                      onClick={() => setIsPinned(!isPinned)}
-                      className={`text-xs font-bold uppercase transition-colors flex items-center gap-1 ${
-                        isPinned
-                          ? "text-white"
-                          : "text-zinc-500 hover:text-white"
-                      }`}
-                    >
-                      {isPinned ? <PinOff size={14} /> : <Pin size={14} />}
-                      {isPinned ? "Unpin" : "Pin"}
-                    </button>
-                  </div>
-                  <button
-                    onClick={onRender}
-                    className="bg-white text-black px-8 py-2.5 rounded-full font-bold text-sm hover:bg-zinc-200 transition-colors shadow-lg active:scale-95"
-                  >
-                    {dict.common.render}
-                  </button>
-                </div>
-              </div>
             </motion.div>
           </AnimatePresence>
         </div>
@@ -663,5 +631,3 @@ export const FloatingControls = ({
     </div>
   )
 }
-
-export default FloatingControls

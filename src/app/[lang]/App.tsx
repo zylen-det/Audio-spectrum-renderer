@@ -15,9 +15,10 @@ import { generateASSHeader, generateASSFrame } from "../../utils/assUtils"
 import { runVideoRender } from "../../utils/videoRenderer"
 import { motion } from "motion/react"
 import { PopOutButton } from "../../components/PopOutButton"
-import { PlayButton } from "../../components/PlayButton"
+import { PlaybackControls } from "../../components/PlaybackControls"
+import { AudioLines } from "lucide-react"
 
-export const DEFAULT_SETTINGS: VisualizerSettings = {
+const DEFAULT_SETTINGS: VisualizerSettings = {
   barCount: 64,
   barWidth: 4,
   barHeightMultiplier: 1.0,
@@ -42,6 +43,7 @@ export const DEFAULT_SETTINGS: VisualizerSettings = {
   minFreq: 20,
   maxFreq: 16000,
 }
+export { DEFAULT_SETTINGS }
 
 const RENDER_FPS = 30
 const SIMULATION_FPS = 60
@@ -55,9 +57,12 @@ export default function App() {
 
   const [files, setFiles] = useState<AudioFile[]>([])
   const [currentFileId, setCurrentFileId] = useState<string | null>(null)
+  const [currentFileIndex, setCurrentFileIndex] = useState(0)
   const [settings, setSettings] = useState<VisualizerSettings>(DEFAULT_SETTINGS)
   const [leftOpen, setLeftOpen] = useState(false)
   const [rightOpen, setRightOpen] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+  const [isFloatVis, setFloatVis] = useState(false)
 
   const {
     isPlaying,
@@ -68,7 +73,9 @@ export default function App() {
     duration,
     analyser,
     audioBuffer,
-  } = useAudioPlayer()
+    volume,
+    setVolume,
+  } = useAudioPlayer(files, currentFileIndex)
 
   const [queue, setQueue] = useState<RenderTask[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
@@ -76,6 +83,7 @@ export default function App() {
   const [ffmpegLoaded, setFfmpegLoaded] = useState(false)
   const currentTaskIdRef = useRef<string | null>(null)
   const activeWorkerRef = useRef<Worker | null>(null)
+  const prevVolumeRef = useRef(1)
 
   useEffect(() => {
     const load = async () => {
@@ -171,7 +179,9 @@ export default function App() {
   }
 
   const handleSelectFile = async (file: AudioFile) => {
+    const idx = files.findIndex((f) => f.id === file.id)
     setCurrentFileId(file.id)
+    setCurrentFileIndex(idx >= 0 ? idx : currentFileIndex)
     await loadAudio(file.file)
   }
 
@@ -179,7 +189,60 @@ export default function App() {
     setFiles((prev) => prev.filter((f) => f.id !== id))
     if (currentFileId === id) {
       setCurrentFileId(null)
+      setCurrentFileIndex(-1)
     }
+  }
+
+  const handleToggleMute = () => {
+    console.log(prevVolumeRef.current)
+    if (isMuted) {
+      // 取消靜音：恢復之前的音量
+      setVolume(prevVolumeRef.current)
+      setIsMuted(false)
+    } else {
+      // 只有當目前音量 > 0 時才記錄（避免覆蓋掉正確的 prevVolume）
+      if (volume > 0) {
+        prevVolumeRef.current = volume
+      }
+      setVolume(0)
+      setIsMuted(true)
+    }
+  }
+
+  const handleVolumeChange = (vol: number) => {
+    setVolume(vol)
+    if (vol > 0 && isMuted) {
+      setIsMuted(false)
+    }
+  }
+
+
+  const handlePrev = () => {
+    if (files.length === 0) return undefined
+    let idx: number
+    if (currentFileIndex <= 0) {
+      idx = files.length - 1
+      handleSelectFile(files[files.length - 1])
+    } else {
+      idx = currentFileIndex - 1
+      handleSelectFile(files[currentFileIndex - 1])
+    }
+    setCurrentFileIndex(idx)
+    return idx
+  }
+
+  const handleNext = () => {
+    if (files.length === 0) return undefined
+    let idx: number
+    if (currentFileIndex >= files.length - 1) {
+      idx = 0
+      handleSelectFile(files[0])
+    } else {
+      idx = currentFileIndex + 1
+      handleSelectFile(files[currentFileIndex + 1])
+    }
+    setCurrentFileIndex(idx)
+    return idx
   }
 
   const handleAddToQueue = () => {
@@ -308,8 +371,8 @@ export default function App() {
       }
       try {
         const ffmpeg = ffmpegRef.current
-        await ffmpeg?.deleteFile("input.mp3").catch(() => {})
-        await ffmpeg?.deleteFile("output.mp4").catch(() => {})
+        await ffmpeg?.deleteFile("input.mp3").catch(() => { })
+        await ffmpeg?.deleteFile("output.mp4").catch(() => { })
       } catch (e) {
         console.warn("Failed to clean up FFmpeg files on cancel", e)
       }
@@ -323,6 +386,15 @@ export default function App() {
 
   return (
     <div className="relative w-full h-full overflow-hidden">
+
+      <button
+        onClick={() => setFloatVis(!isFloatVis)}
+        className="absolute top-4 left-1/2 -translate-x-1/2 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-800 hover:bg-zinc-800 transition-colors z-100                 hover:scale-105
+                active:scale-95"
+      >
+        <AudioLines className="w-6 h-6 bg-transparent" />
+      </button>
+
       <div className="absolute inset-0 z-0">
         <Visualizer
           settings={settings}
@@ -348,6 +420,21 @@ export default function App() {
         onCancel={handleCancelTask}
       />
 
+      <PlaybackControls
+        isPlaying={isPlaying}
+        onTogglePlay={togglePlay}
+        onNext={handleNext}
+        onPrev={handlePrev}
+        currentTime={currentTime}
+        duration={duration}
+        onSeek={seek}
+        volume={volume}
+        onVolumeChange={handleVolumeChange}
+        isMuted={isMuted}
+        onToggleMute={handleToggleMute}
+        currentFileName={files.find((f) => f.id === currentFileId)?.name}
+      />
+
       <FloatingControls
         isPlaying={isPlaying}
         onTogglePlay={togglePlay}
@@ -357,10 +444,10 @@ export default function App() {
         currentTime={currentTime}
         duration={duration}
         onSeek={seek}
-        currentFileName={files.find((f) => f.id === currentFileId)?.name}
+        visible={isFloatVis}
       />
 
-      <PopOutButton
+      {/* <PopOutButton
         title={lang === "en" ? "Switch to Chinese" : "切換至英文"}
         onClick={() => {
           const nextLang = lang === "en" ? "zh" : "en"
@@ -372,9 +459,7 @@ export default function App() {
         }}
       >
         {lang === "zh" ? "中文" : "EN"}
-      </PopOutButton>
-
-      <PlayButton onClick={togglePlay} isPlaying={isPlaying}></PlayButton>
+      </PopOutButton> */}
     </div>
   )
 }

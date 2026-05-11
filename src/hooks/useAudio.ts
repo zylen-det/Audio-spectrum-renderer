@@ -1,30 +1,63 @@
-import { useState, useEffect, useRef } from 'react';
-import { VisualizerSettings } from '../types';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { AudioFile } from '../types';
 
-export const useAudioPlayer = () => {
+export const useAudioPlayer = (
+  files: AudioFile[] = [],
+  currentFileIndex: number = -1
+) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  const [volume, setVolumeState] = useState(1);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
   const startTimeRef = useRef<number>(0);
   const pausedTimeRef = useRef<number>(0);
   const animationFrameRef = useRef<number>(0);
+  const currentFileIndexRef = useRef(currentFileIndex);
+
+  useEffect(() => {
+    currentFileIndexRef.current = currentFileIndex;
+  }, [currentFileIndex]);
 
   useEffect(() => {
     audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     const ctx = audioContextRef.current;
-    const node = ctx.createAnalyser();
-    node.fftSize = 2048;
-    setAnalyser(node);
+
+    const analyserNode = ctx.createAnalyser();
+    analyserNode.fftSize = 2048;
+    setAnalyser(analyserNode);
+
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = volume;
+    analyserNode.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    gainNodeRef.current = gainNode;
 
     return () => {
       ctx.close();
       cancelAnimationFrame(animationFrameRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = volume;
+    }
+  }, [volume]);
+
+  const stop = useCallback(() => {
+    if (sourceRef.current) {
+      sourceRef.current.stop();
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
+    setIsPlaying(false);
+    cancelAnimationFrame(animationFrameRef.current);
   }, []);
 
   const loadAudio = async (file: File) => {
@@ -40,7 +73,7 @@ export const useAudioPlayer = () => {
     pausedTimeRef.current = 0;
   };
 
-  const play = () => {
+  const play = useCallback(() => {
     if (!audioContextRef.current || !audioBuffer || !analyser) return;
 
     if (audioContextRef.current.state === 'suspended') {
@@ -50,7 +83,6 @@ export const useAudioPlayer = () => {
     const source = audioContextRef.current.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(analyser);
-    analyser.connect(audioContextRef.current.destination);
 
     const offset = pausedTimeRef.current % audioBuffer.duration;
     source.start(0, offset);
@@ -74,9 +106,9 @@ export const useAudioPlayer = () => {
       }
     };
     updateProgress();
-  };
+  }, [audioBuffer, analyser, duration, stop]);
 
-  const pause = () => {
+  const pause = useCallback(() => {
     if (sourceRef.current) {
       sourceRef.current.stop();
       sourceRef.current.disconnect();
@@ -87,22 +119,12 @@ export const useAudioPlayer = () => {
     }
     setIsPlaying(false);
     cancelAnimationFrame(animationFrameRef.current);
-  };
+  }, []);
 
-  const stop = () => {
-    if (sourceRef.current) {
-      sourceRef.current.stop();
-      sourceRef.current.disconnect();
-      sourceRef.current = null;
-    }
-    setIsPlaying(false);
-    cancelAnimationFrame(animationFrameRef.current);
-  };
-
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     if (isPlaying) pause();
     else play();
-  };
+  }, [isPlaying, pause, play]);
 
   const getFrequencyData = (dataArray: Uint8Array) => {
     if (analyser) {
@@ -110,7 +132,7 @@ export const useAudioPlayer = () => {
     }
   };
 
-  const seek = (time: number) => {
+  const seek = useCallback((time: number) => {
     if (!audioContextRef.current || !audioBuffer) return;
 
     const wasPlaying = isPlaying;
@@ -124,7 +146,23 @@ export const useAudioPlayer = () => {
     if (wasPlaying) {
       play();
     }
-  };
+  }, [audioBuffer, isPlaying, stop, play]);
+
+  const setVolume = useCallback((val: number) => {
+    setVolumeState(val);
+  }, []);
+
+  const nextTrack = useCallback(() => {
+    if (files.length === 0) return;
+    const nextIdx = (currentFileIndexRef.current + 1) % files.length;
+    return nextIdx;
+  }, [files.length]);
+
+  const prevTrack = useCallback(() => {
+    if (files.length === 0) return;
+    const prevIdx = (currentFileIndexRef.current - 1 + files.length) % files.length;
+    return prevIdx;
+  }, [files.length]);
 
   return {
     isPlaying,
@@ -136,6 +174,10 @@ export const useAudioPlayer = () => {
     getFrequencyData,
     analyser,
     audioBuffer,
-    audioContext: audioContextRef.current
+    audioContext: audioContextRef.current,
+    volume,
+    setVolume,
+    nextTrack,
+    prevTrack,
   };
 };
