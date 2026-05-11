@@ -99,16 +99,16 @@ export function calculateBarHeights(
     const limit = Math.min(end, fftSize / 2)
 
     for (let bin = start; bin < limit; bin++) {
-      const mag = Math.sqrt(real[bin] * real[bin] + imag[bin] * imag[bin])
+      const mag = Math.sqrt(real[bin] * real[bin] + imag[bin] * imag[bin]) / (real.length / 2)
       if (mag > maxMag) maxMag = mag
     }
 
     let target =
-      Math.pow(maxMag, CONTRAST) * 0.007 * settings.barHeightMultiplier
+      Math.pow(maxMag, CONTRAST) * settings.barHeightMultiplier * 5
     target = Math.max(0, target)
 
-    const threshold = settings.softCeilingThreshold ?? 0.7
-    const strength = settings.softCeilingStrength ?? 2.0
+    const threshold = settings.softCeilingThreshold ?? 0.9
+    const strength = settings.softCeilingStrength ?? 0.5
     if (target > threshold) {
       const excess = target - threshold
       const compressedExcess = (1 - Math.exp(-excess * strength)) / strength

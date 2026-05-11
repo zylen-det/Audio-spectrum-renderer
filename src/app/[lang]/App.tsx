@@ -18,12 +18,12 @@ import { PopOutButton } from "../../components/PopOutButton"
 import { PlayButton } from "../../components/PlayButton"
 
 export const DEFAULT_SETTINGS: VisualizerSettings = {
-  barCount: 24,
-  barWidth: 12,
+  barCount: 64,
+  barWidth: 4,
   barHeightMultiplier: 1.0,
   cornerRadius: 4,
   totalWidth: 800,
-  spacing: 800 / 24,
+  spacing: 800 / 64,
   color: "#ffffff",
   backgroundColor: "#000000",
   positiveHeightScale: 1.0,
@@ -36,8 +36,8 @@ export const DEFAULT_SETTINGS: VisualizerSettings = {
   yOffset: -30,
   renderFps: 60,
   encoder: "webcodecs-hw",
-  softCeilingThreshold: 0.7,
-  softCeilingStrength: 2.0,
+  softCeilingThreshold: 0.9,
+  softCeilingStrength: 0.5,
   referenceFps: 144,
   minFreq: 20,
   maxFreq: 16000,
