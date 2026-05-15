@@ -1,7 +1,11 @@
 NEW FEATURE:
 UI:
+
 - 將單一的play/pause按鈕改成包含下一首，上一首，調整音量的完整playback control，並定位到螢幕上方，樣式是一個懸浮膠囊pre/next/play_pause是一個group且水平排列，這個group下方是音量控制slider和喇叭icon
-DONE.
+  DONE.
 - 把FloatingControl改為點擊展開按鈕展開，而不是懸停展開
-DONE.
+  DONE.
 - 加入全局設置，觸發按鈕定位在屏幕左下角，觸發按鈕做成簡單樣式。點擊後可以出現一個dialog彈窗：全局設定畫面，可以調整語言(UI用dropDown, 使用已有切換邏輯)和透明效果開關(FlaotingControl和兩側drawer都有透明效果)
+  Doing: 加入了簡陋的設置<dialog>，只有語言drop down而且沒動畫
+  SPECTRUM:
+- 想辦法加入背景顏色選項，想辦法應用透明通道渲染

@@ -33,19 +33,19 @@ export const LeftDrawer: React.FC<LeftDrawerProps> = ({
   const { t: dict } = useI18n()
   return (
     <motion.div
-      className="fixed top-0 left-0 h-full bg-zinc-950/80 backdrop-blur-md border-r border-zinc-800 z-50 flex flex-col w-80"
+      className="fixed top-0 left-0 h-full bg-zinc-950/80 backdrop-blur-md border-r border-zinc-700 z-50 flex flex-col w-80"
       initial={{ x: -320 }}
       animate={{ x: isOpen ? 0 : -320 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
     >
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="absolute top-4 -right-14 w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center border-zinc-800 hover:bg-zinc-800 transition-colors"
+        className="absolute top-4 -right-14 w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center border-zinc-700 hover:bg-zinc-700 transition-colors"
       >
         <ListMusic className="w-6 h-6 bg-transparent" />
       </button>
 
-      <div className="p-6 border-b border-zinc-800">
+      <div className="p-6 border-b border-zinc-700">
         <h2 className="text-xl font-bold mb-4 tracking-tight">
           {dict.drawer.audioFiles}
         </h2>

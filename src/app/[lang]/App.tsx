@@ -16,7 +16,7 @@ import { runVideoRender } from "../../utils/videoRenderer"
 import { motion } from "motion/react"
 import { PopOutButton } from "../../components/PopOutButton"
 import { PlaybackControls } from "../../components/PlaybackControls"
-import { AudioLines } from "lucide-react"
+import { AudioLines, Settings } from "lucide-react"
 
 const DEFAULT_SETTINGS: VisualizerSettings = {
   barCount: 64,
@@ -63,6 +63,7 @@ export default function App() {
   const [rightOpen, setRightOpen] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [isFloatVis, setFloatVis] = useState(false)
+  const settingsDialogRef = useRef<HTMLDialogElement | null>(null)
 
   const {
     isPlaying,
@@ -316,6 +317,9 @@ export default function App() {
   }
 
   const runRender = async (task: RenderTask, file: File) => {
+    if (!ffmpegRef.current) {
+      throw new Error("FFmpeg is not loaded")
+    }
     const ffmpeg = ffmpegRef.current
     currentTaskIdRef.current = task.id
 
@@ -337,7 +341,8 @@ export default function App() {
                 }
               }
               if (updates.stageTimestamp) {
-                const { stage, type } = updates.stageTimestamp
+                const stage = updates.stageTimestamp.stage as keyof typeof t.stageTimestamps
+                const type = updates.stageTimestamp.type as "start" | "end"
                 const now = Date.now()
                 const currentTimestamps = { ...t.stageTimestamps }
                 if (type === "start") {
@@ -389,11 +394,52 @@ export default function App() {
 
       <button
         onClick={() => setFloatVis(!isFloatVis)}
-        className="absolute top-4 left-1/2 -translate-x-1/2 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-800 hover:bg-zinc-800 transition-colors z-100                 hover:scale-105
+        className="absolute top-4 left-1/2 -translate-x-1/2 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-700 hover:bg-zinc-800 transition-all-200 z-100                 hover:scale-105
                 active:scale-95"
       >
         <AudioLines className="w-6 h-6 bg-transparent" />
       </button>
+
+      <button
+        onClick={() => settingsDialogRef.current?.showModal()}
+        className="absolute bottom-4 left-4 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-700 hover:bg-zinc-800 transition-all-200 z-100                 hover:scale-105
+                active:scale-95"
+      >
+        <Settings className="w-6 h-6 bg-transparent" />
+      </button>
+
+      <dialog
+        ref={settingsDialogRef}
+        className="rounded-2xl border border-zinc-700 bg-zinc-950 p-6 text-left shadow-2xl m-auto"
+      >
+        <div className="space-y-4 text-white">
+          <div className="text-sm font-medium">{lang==='語言' ? '關閉' : 'Language'}</div>
+          <select
+            value={lang}
+            onChange={(e) => {
+              const nextLang = e.target.value
+              // settingsDialogRef.current?.close()
+              switchLocale(nextLang)
+              const segments = location.pathname.split("/")
+              segments[1] = nextLang
+              navigate(segments.join("/"))
+            }}
+            className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-white focus:border-white focus:outline-none"
+          >
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+          </select>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => settingsDialogRef.current?.close()}
+              className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-white hover:bg-zinc-800"
+            >{lang==='zh' ? '關閉' : 'close'}
+              
+            </button>
+          </div>
+        </div>
+      </dialog>
 
       <div className="absolute inset-0 z-0">
         <Visualizer

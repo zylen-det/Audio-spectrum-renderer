@@ -90,17 +90,11 @@ export function FloatingControls({
               initial={{ y: -420 }}
               animate={{ y: visible ? 0 : -420 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="pointer-events-auto bg-zinc-950/20 backdrop-blur-sm border border-zinc-800 rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4 mb-6"
+              className="pointer-events-auto bg-zinc-950/20 backdrop-blur-sm border border-zinc-700 rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4 mb-6"
             >
 
-              <div className="flex justify-between items-end pb-4 border-b border-zinc-800 mt-2">
+              <div className="flex justify-between items-end pb-4 border-b border-zinc-700 mt-2">
                 <div className="flex flex-col">
-                  <button
-                    onClick={() => { }}
-                    className="w-10 h-10 mb-8 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-800 hover:bg-zinc-800 transition-colors z-100"
-                  >
-                    <Settings className="w-6 h-6 bg-transparent" />
-                  </button>
 
                   <button
                     onClick={resetAllSettings}
@@ -110,7 +104,7 @@ export function FloatingControls({
                     {dict.controls.resetAll}
                   </button>
                 </div>
-                <div className="flex gap-8 items-center bg-zinc-900/50 px-5 py-3 rounded-xl border border-zinc-800/50">
+                <div className="flex gap-8 items-center bg-zinc-900/50 px-5 py-3 rounded-xl border border-zinc-700/50">
                   <div className="w-48">
                     <SettingInput
                       label={dict.controls.renderFps}
