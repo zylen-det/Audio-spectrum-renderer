@@ -40,7 +40,7 @@ export function PopOutButton({ onClick, title, children }: props) {
         }}
         className="
             pointer-events-auto relative z-10
-            bg-zinc-800 text-white text-xs w-10 h-10 rounded-full shadow-md
+            bg-zinc-800 text-white test-sm w-10 h-10 rounded-full shadow-md
             flex items-center justify-center
             hover:bg-zinc-700 transition-colors
           "

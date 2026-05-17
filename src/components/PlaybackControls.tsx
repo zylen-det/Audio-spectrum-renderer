@@ -166,7 +166,7 @@ export function PlaybackControls({
               background: `linear-gradient(to right, #ffffff ${progressPercentage}%, #3f3f46 ${progressPercentage}%)`,
             }}
           />
-          <div className="flex justify-between items-center text-xs font-mono text-zinc-400 relative">
+          <div className="flex justify-between items-center test-sm font-mono text-zinc-400 relative">
             <span>{formatTime(currentTime)}</span>
             <span className="absolute left-1/2 -translate-x-1/2 text-zinc-200 font-sans truncate max-w-[500px] tracking-wide">
               {currentFileName || dict.drawer.noFiles}

@@ -59,12 +59,12 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
           <h2 className="text-xl font-bold tracking-tight">
             {dict.drawer.renderQueue}
           </h2>
-          <p className="text-xs text-zinc-500 mt-1">{queue.length} tasks</p>
+          <p className="test-sm text-zinc-500 mt-1">{queue.length} tasks</p>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {queue.length === 0 && (
-            <div className="text-center text-zinc-500 py-12 text-sm">
+            <div className="text-center text-zinc-500 py-12 text-base">
               {dict.drawer.noTasks}
             </div>
           )}
@@ -140,7 +140,7 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
                 <a
                   href={task.resultUrl}
                   download={`spectrum-${task.fileName}.mp4`}
-                  className="flex items-center justify-center gap-2 w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold py-2 rounded-lg transition-colors"
+                  className="flex items-center justify-center gap-2 w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 test-sm font-bold py-2 rounded-lg transition-colors"
                 >
                   <Download size={14} />
                   {dict.common.done}
@@ -148,7 +148,7 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
               )}
 
               {task.status === "error" && (
-                <p className="text-xs text-red-400 bg-red-500/10 p-2 rounded border border-red-500/20">
+                <p className="test-sm text-red-400 bg-red-500/10 p-2 rounded border border-red-500/20">
                   {task.error || "Unknown error"}
                 </p>
               )}
@@ -181,14 +181,14 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
                   <h3 className="text-lg font-bold text-white mb-1">
                     {queue.find((t) => t.id === taskToCancel)?.status ===
                       "done" ||
-                    queue.find((t) => t.id === taskToCancel)?.status === "error"
+                      queue.find((t) => t.id === taskToCancel)?.status === "error"
                       ? dict.drawer.removeTask
                       : dict.drawer.cancelRendering}
                   </h3>
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-base text-zinc-400">
                     {queue.find((t) => t.id === taskToCancel)?.status ===
                       "done" ||
-                    queue.find((t) => t.id === taskToCancel)?.status === "error"
+                      queue.find((t) => t.id === taskToCancel)?.status === "error"
                       ? dict.drawer.removeTaskConfirm
                       : dict.drawer.cancelTaskConfirm}
                   </p>
@@ -196,17 +196,17 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
                 <div className="flex gap-3 w-full mt-2">
                   <button
                     onClick={() => setTaskToCancel(null)}
-                    className="flex-1 px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium text-sm transition-colors"
+                    className="flex-1 px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium text-base transition-colors"
                   >
                     {dict.drawer.keepIt}
                   </button>
                   <button
                     onClick={confirmCancel}
-                    className="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium text-sm transition-colors"
+                    className="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium text-base transition-colors"
                   >
                     {queue.find((t) => t.id === taskToCancel)?.status ===
                       "done" ||
-                    queue.find((t) => t.id === taskToCancel)?.status === "error"
+                      queue.find((t) => t.id === taskToCancel)?.status === "error"
                       ? dict.drawer.yesRemove
                       : dict.drawer.yesCancel}
                   </button>

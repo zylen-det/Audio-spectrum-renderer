@@ -52,7 +52,7 @@ export const SettingInput = ({
   return (
     <div title={title} className="space-y-2">
       <div className="flex justify-between items-center">
-        <label className="text-[12px] font-bold text-zinc-500  tracking-wider">
+       <label className="text-sm font-bold text-zinc-500 uppercase tracking-wider">
           {label}
         </label>
         <div className="flex items-center gap-2">
@@ -69,10 +69,10 @@ export const SettingInput = ({
               value={displayValue}
               onChange={handleInputChange}
               onBlur={handleBlur}
-              className="w-10 bg-transparent text-right outline-none text-xs font-mono text-zinc-200"
+              className="w-10 bg-transparent text-right outline-none test-sm font-mono text-zinc-200"
             />
             {unit && (
-              <span className="text-[10px] text-zinc-500 ml-1 font-medium">
+              <span className="text-xs text-zinc-500 ml-1 font-medium">
                 {unit}
               </span>
             )}
