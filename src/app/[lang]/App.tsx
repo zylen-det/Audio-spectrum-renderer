@@ -17,6 +17,7 @@ import { motion } from "motion/react"
 import { PopOutButton } from "../../components/PopOutButton"
 import { PlaybackControls } from "../../components/PlaybackControls"
 import { AudioLines, Settings } from "lucide-react"
+import { MyDialog } from "../../components/MyDialog"
 
 const DEFAULT_SETTINGS: VisualizerSettings = {
   barCount: 64,
@@ -85,6 +86,7 @@ export default function App() {
   const currentTaskIdRef = useRef<string | null>(null)
   const activeWorkerRef = useRef<Worker | null>(null)
   const prevVolumeRef = useRef(1)
+  const [isSettingOpen, setIsSettingOpen] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -401,19 +403,17 @@ export default function App() {
       </button>
 
       <button
-        onClick={() => settingsDialogRef.current?.showModal()}
+        onClick={() => setIsSettingOpen(!isSettingOpen)}
         className="absolute bottom-4 left-4 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-700 hover:bg-zinc-800 transition-all-200 z-100                 hover:scale-105
                 active:scale-95"
       >
         <Settings className="w-6 h-6 bg-transparent" />
       </button>
 
-      <dialog
-        ref={settingsDialogRef}
-        className="rounded-2xl border border-zinc-700 bg-zinc-950 p-6 text-left shadow-2xl m-auto"
+      <MyDialog isVisible={isSettingOpen} handleClose={() => setIsSettingOpen(false)}
       >
         <div className="space-y-4 text-white">
-          <div className="text-sm font-medium">{lang==='語言' ? '關閉' : 'Language'}</div>
+          <div className="text-sm font-medium">{lang === 'zh' ? '語言' : 'Language'}</div>
           <select
             value={lang}
             onChange={(e) => {
@@ -432,14 +432,14 @@ export default function App() {
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={() => settingsDialogRef.current?.close()}
+              onClick={() => setIsSettingOpen(false)}
               className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-white hover:bg-zinc-800"
-            >{lang==='zh' ? '關閉' : 'close'}
-              
+            >{lang === 'zh' ? '關閉' : 'close'}
+
             </button>
           </div>
         </div>
-      </dialog>
+      </MyDialog>
 
       <div className="absolute inset-0 z-0">
         <Visualizer
@@ -492,20 +492,6 @@ export default function App() {
         onSeek={seek}
         visible={isFloatVis}
       />
-
-      {/* <PopOutButton
-        title={lang === "en" ? "Switch to Chinese" : "切換至英文"}
-        onClick={() => {
-          const nextLang = lang === "en" ? "zh" : "en"
-          switchLocale(nextLang)
-          // replace first segment of path
-          const segments = location.pathname.split("/")
-          segments[1] = nextLang
-          navigate(segments.join("/"))
-        }}
-      >
-        {lang === "zh" ? "中文" : "EN"}
-      </PopOutButton> */}
     </div>
   )
 }

@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Logs,
 } from "lucide-react"
+import { MyDialog } from "../components/MyDialog";
 
 interface RightDrawerProps {
   queue: RenderTask[]
@@ -157,65 +158,47 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
         </div>
       </motion.div>
 
-      <AnimatePresence>
-        {taskToCancel && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", duration: 0.3 }}
-              className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl z-99"
-              onClick={(e) => e.stopPropagation()}
+      <MyDialog isVisible={Boolean(taskToCancel)} handleClose={() => setTaskToCancel(null)}>
+        <div className="flex flex-col items-center text-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
+            <AlertTriangle size={24} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white mb-1">
+              {queue.find((t) => t.id === taskToCancel)?.status ===
+                "done" ||
+                queue.find((t) => t.id === taskToCancel)?.status === "error"
+                ? dict.drawer.removeTask
+                : dict.drawer.cancelRendering}
+            </h3>
+            <p className="text-base text-zinc-400">
+              {queue.find((t) => t.id === taskToCancel)?.status ===
+                "done" ||
+                queue.find((t) => t.id === taskToCancel)?.status === "error"
+                ? dict.drawer.removeTaskConfirm
+                : dict.drawer.cancelTaskConfirm}
+            </p>
+          </div>
+          <div className="flex gap-3 w-full mt-2">
+            <button
+              onClick={() => setTaskToCancel(null)}
+              className="flex-1 px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium text-base transition-colors"
             >
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
-                  <AlertTriangle size={24} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white mb-1">
-                    {queue.find((t) => t.id === taskToCancel)?.status ===
-                      "done" ||
-                      queue.find((t) => t.id === taskToCancel)?.status === "error"
-                      ? dict.drawer.removeTask
-                      : dict.drawer.cancelRendering}
-                  </h3>
-                  <p className="text-base text-zinc-400">
-                    {queue.find((t) => t.id === taskToCancel)?.status ===
-                      "done" ||
-                      queue.find((t) => t.id === taskToCancel)?.status === "error"
-                      ? dict.drawer.removeTaskConfirm
-                      : dict.drawer.cancelTaskConfirm}
-                  </p>
-                </div>
-                <div className="flex gap-3 w-full mt-2">
-                  <button
-                    onClick={() => setTaskToCancel(null)}
-                    className="flex-1 px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium text-base transition-colors"
-                  >
-                    {dict.drawer.keepIt}
-                  </button>
-                  <button
-                    onClick={confirmCancel}
-                    className="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium text-base transition-colors"
-                  >
-                    {queue.find((t) => t.id === taskToCancel)?.status ===
-                      "done" ||
-                      queue.find((t) => t.id === taskToCancel)?.status === "error"
-                      ? dict.drawer.yesRemove
-                      : dict.drawer.yesCancel}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {dict.drawer.keepIt}
+            </button>
+            <button
+              onClick={confirmCancel}
+              className="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium text-base transition-colors"
+            >
+              {queue.find((t) => t.id === taskToCancel)?.status ===
+                "done" ||
+                queue.find((t) => t.id === taskToCancel)?.status === "error"
+                ? dict.drawer.yesRemove
+                : dict.drawer.yesCancel}
+            </button>
+          </div>
+        </div>
+      </MyDialog>
     </>
   )
 }
