@@ -269,7 +269,7 @@ const StageItem = ({
     <div
       className={`space-y-1.5 transition-opacity duration-300 ${!isActive && !isDone ? "opacity-30" : "opacity-100"}`}
     >
-      <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest">
+      <div className="flex justify-between items-center text-[10px]   font-black tracking-widest">
         <div className="flex items-center gap-1.5 min-w-0">
           <span
             className={`${isActive ? "text-zinc-100" : isDone ? "text-emerald-500" : "text-zinc-500"} flex items-center gap-1.5 truncate`}

@@ -98,7 +98,7 @@ export function FloatingControls({
 
                   <button
                     onClick={resetAllSettings}
-                    className="test-sm font-bold text-zinc-500 hover:text-white uppercase transition-colors flex items-center gap-1"
+                    className="test-sm font-bold text-zinc-500 hover:text-white   transition-colors flex items-center gap-1"
                   >
                     <RotateCcw size={14} />
                     {dict.controls.resetAll}
@@ -118,7 +118,7 @@ export function FloatingControls({
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="test-sm font-bold text-zinc-500 uppercase">
+                    <label className="test-sm font-bold text-zinc-500  ">
                       {dict.controls.greenScreen || "導出綠幕"}
                     </label>
                     <label className="relative flex items-center cursor-pointer gap-2 h-8">
@@ -139,7 +139,7 @@ export function FloatingControls({
                     </label>
                   </div>
                   <div className="w-56 space-y-2">
-                    <label className="test-sm font-bold text-zinc-500 uppercase flex items-center gap-2">
+                    <label className="test-sm font-bold text-zinc-500   flex items-center gap-2">
                       {dict.controls.encoder}
                       {typeof window !== "undefined" &&
                         !("VideoEncoder" in window) && (
@@ -233,7 +233,7 @@ export function FloatingControls({
 
               <div className="grid grid-cols-8 gap-x-6 gap-y-2 items-start">
                 <div className="col-span-2 space-y-2">
-                  <h3 className="test-sm font-bold text-zinc-400 uppercase tracking-wider border-b border-zinc-700 pb-1 mb-2">
+                  <h3 className="test-sm font-bold text-zinc-400   tracking-wider border-b border-zinc-700 pb-1 mb-2">
                     {dict.controls.sectionLayout}
                   </h3>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-2">
@@ -296,7 +296,7 @@ export function FloatingControls({
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="test-sm font-bold text-zinc-400 uppercase tracking-wider border-b border-zinc-700 pb-1 mb-2">
+                  <h3 className="test-sm font-bold text-zinc-400   tracking-wider border-b border-zinc-700 pb-1 mb-2">
                     {dict.controls.sectionPositiveWave}
                   </h3>
 
@@ -313,7 +313,7 @@ export function FloatingControls({
 
                   <div className="space-y-2 pt-1">
                     <div className="flex justify-between items-center">
-                      <label className="test-sm font-bold text-zinc-500 uppercase">
+                      <label className="test-sm font-bold text-zinc-500  ">
                         {dict.controls.color}
                       </label>
                       <button
@@ -346,7 +346,7 @@ export function FloatingControls({
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="test-sm font-bold text-zinc-400 uppercase tracking-wider border-b border-zinc-700 pb-1 mb-2">
+                  <h3 className="test-sm font-bold text-zinc-400   tracking-wider border-b border-zinc-700 pb-1 mb-2">
                     {dict.controls.sectionNegativeWave}
                   </h3>
 
@@ -363,7 +363,7 @@ export function FloatingControls({
 
                   <div className="space-y-2 pt-1">
                     <div className="flex justify-between items-center">
-                      <label className="test-sm font-bold text-zinc-500 uppercase">
+                      <label className="test-sm font-bold text-zinc-500  ">
                         {dict.controls.color}
                       </label>
                       <button
@@ -396,7 +396,7 @@ export function FloatingControls({
                 </div>
 
                 <div className="col-span-4 space-y-2">
-                  <h3 className="test-sm font-bold text-zinc-400 uppercase tracking-wider border-b border-zinc-700 pb-1 mb-2">
+                  <h3 className="test-sm font-bold text-zinc-400   tracking-wider border-b border-zinc-700 pb-1 mb-2">
                     {dict.controls.sectionGlobal}
                   </h3>
                   <div className="grid grid-cols-4 gap-x-6 gap-y-2">
@@ -494,7 +494,7 @@ export function FloatingControls({
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <label className="test-sm font-bold text-zinc-500 uppercase">
+                      <label className="test-sm font-bold text-zinc-500  ">
                         {dict.controls.frequencyRange || "Frequency Range"}
                       </label>
                       <div className="flex items-center gap-3">
