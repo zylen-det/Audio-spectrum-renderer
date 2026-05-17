@@ -87,10 +87,10 @@ export function FloatingControls({
         <div className="absolute top-0 w-full flex flex-col items-center pointer-events-none">
           <AnimatePresence>
             <motion.div
-              initial={{ y: -500 }}
-              animate={{ y: visible ? 0 : -500 }}
+              initial={{ y: "-105%" }}
+              animate={{ y: visible ? 0 : "-105%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="pointer-events-auto bg-zinc-950/20 backdrop-blur-sm border border-zinc-700 rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4 mb-6"
+              className="pointer-events-auto bg-zinc-950/20 backdrop-blur-sm border border-zinc-700 rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4"
             >
 
               <div className="flex justify-between items-end pb-4 border-b border-zinc-700 mt-2">

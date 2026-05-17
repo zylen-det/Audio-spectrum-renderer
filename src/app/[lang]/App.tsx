@@ -413,7 +413,7 @@ export default function App() {
       <MyDialog isVisible={isSettingOpen} handleClose={() => setIsSettingOpen(false)}
       >
         <div className="space-y-4 text-white">
-          <div className="text-sm font-medium">{lang === 'zh' ? '語言' : 'Language'}</div>
+          <div className="text-lg font-medium">{lang === 'zh' ? '語言' : 'Language'}</div>
           <select
             value={lang}
             onChange={(e) => {

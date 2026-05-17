@@ -7,5 +7,7 @@ UI:
   DONE.
 - 加入全局設置，觸發按鈕定位在屏幕左下角，觸發按鈕做成簡單樣式。點擊後可以出現一個dialog彈窗：全局設定畫面，可以調整語言(UI用dropDown, 使用已有切換邏輯)和透明效果開關(FlaotingControl和兩側drawer都有透明效果)
   Doing: 加入了簡陋的設置<dialog>，只有語言drop down而且沒動畫
+         現在將取消渲染任務的彈窗抽離出來成MyDialog.tsx復用了
+  
   SPECTRUM:
 - 想辦法加入背景顏色選項，想辦法應用透明通道渲染
