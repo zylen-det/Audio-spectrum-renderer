@@ -48,8 +48,7 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
   return (
     <>
       <motion.div
-        className={`fixed top-0 right-0 h-full  border-l border-zinc-700 bg-zinc-950/${uiOpacity * 100} z-50 flex flex-col w-80 ${enableBlur ? 'backdrop-blur-md' : ``
-          }`}
+        className={`fixed top-0 right-0 h-full  border-l border-zinc-700 z-50 flex flex-col w-80 ${enableBlur ? 'backdrop-blur-md bg-zinc-950/80' : 'bg-zinc-950'}`}
         initial={{ x: 320 }}
         animate={{ x: isOpen ? 0 : 320 }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}

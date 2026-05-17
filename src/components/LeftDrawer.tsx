@@ -37,8 +37,7 @@ export const LeftDrawer: React.FC<LeftDrawerProps> = ({
   const { t: dict } = useI18n()
   return (
     <motion.div
-      className={`fixed top-0 left-0 h-full backdrop-blur-md border-r border-zinc-700 bg-zinc-950/${uiOpacity * 100} z-50 flex flex-col w-80 ${enableBlur ? 'backdrop-blur-md' : ``
-        }`}
+      className={`fixed top-0 left-0 h-full border-r border-zinc-700  z-50 flex flex-col w-80 ${enableBlur ? 'backdrop-blur-md bg-zinc-950/80' : 'bg-zinc-950'}`}
       initial={{ x: -320 }}
       animate={{ x: isOpen ? 0 : -320 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}

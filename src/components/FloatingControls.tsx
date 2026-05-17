@@ -90,8 +90,7 @@ export function FloatingControls({
               initial={{ y: "-105%" }}
               animate={{ y: visible ? 0 : "-105%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className={`pointer-events-auto border border-zinc-700 bg-zinc-950/${uiOpacity * 100} rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4 ${enableBlur ? 'backdrop-blur-md' : ''
-                }`}
+              className={`pointer-events-auto border border-zinc-700 rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4 ${enableBlur ? 'backdrop-blur-md bg-zinc-950/80' : 'bg-zinc-950'}`}
             >
 
               <div className="flex justify-between items-end pb-4 border-b border-zinc-700 mt-2">

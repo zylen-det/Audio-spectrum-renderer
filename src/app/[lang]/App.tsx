@@ -392,7 +392,7 @@ export default function App() {
   }
 
   return (
-    <div className={`relative w-full h-full overflow-hidden ${isTransparentUI ? 'backdrop-blur-md' : ''}`}>
+    <div className={`relative w-full h-full overflow-hidden`}>
 
       <button
         onClick={() => setFloatVis(!isFloatVis)}
@@ -442,7 +442,7 @@ export default function App() {
                 setUISettings("uiOpacity", 0.8)
               } else {
                 setUISettings("enableBlur", false)
-                setUISettings("uiOpacity", 1)
+                setUISettings("uiOpacity", 0.8)
               }
             }}
           />
