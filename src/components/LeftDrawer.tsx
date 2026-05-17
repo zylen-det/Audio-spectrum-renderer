@@ -19,6 +19,8 @@ interface LeftDrawerProps {
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
   isOpen: boolean
   setIsOpen: (v: boolean) => void
+  uiOpacity: number
+  enableBlur: boolean
 }
 
 export const LeftDrawer: React.FC<LeftDrawerProps> = ({
@@ -29,11 +31,14 @@ export const LeftDrawer: React.FC<LeftDrawerProps> = ({
   onUpload,
   isOpen,
   setIsOpen,
+  uiOpacity,
+  enableBlur,
 }) => {
   const { t: dict } = useI18n()
   return (
     <motion.div
-      className="fixed top-0 left-0 h-full bg-zinc-950/80 backdrop-blur-md border-r border-zinc-700 z-50 flex flex-col w-80"
+      className={`fixed top-0 left-0 h-full backdrop-blur-md border-r border-zinc-700 bg-zinc-950/${uiOpacity * 100} z-50 flex flex-col w-80 ${enableBlur ? 'backdrop-blur-md' : ``
+        }`}
       initial={{ x: -320 }}
       animate={{ x: isOpen ? 0 : -320 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}

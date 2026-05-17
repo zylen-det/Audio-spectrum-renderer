@@ -9,6 +9,7 @@ import {
   useNavigate,
 } from "react-router-dom"
 import { I18nProvider } from "./app/[lang]/i18nContext"
+import { UISettingsProvider } from "./app/[lang]/UISettingsContext"
 import App from "./app/[lang]/App"
 import { detectLocale } from "./utils/localeDetect"
 
@@ -28,7 +29,9 @@ function LangWrapper() {
   const locale = lang === "zh" ? "zh" : "en"
   return (
     <I18nProvider initialLocale={locale}>
-      <App />
+      <UISettingsProvider initialSettings={{ uiOpacity: 1, enableBlur: true }}>
+        <App />
+      </UISettingsProvider>
     </I18nProvider>
   )
 }

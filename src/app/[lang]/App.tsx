@@ -1,4 +1,3 @@
-"use client"
 
 import React, { useState, useEffect, useRef } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
@@ -8,6 +7,7 @@ import { LeftDrawer } from "../../components/LeftDrawer"
 import { RightDrawer } from "../../components/RightDrawer"
 import { useAudioPlayer } from "../../hooks/useAudio"
 import { useI18n } from "./i18nContext"
+import { useUISettings } from "./UISettingsContext"
 import { AudioFile, RenderTask, VisualizerSettings } from "../../types"
 import type { FFmpeg } from "@ffmpeg/ffmpeg"
 import { fetchFile, toBlobURL } from "@ffmpeg/util"
@@ -53,6 +53,8 @@ const HEIGHT = 720
 
 export default function App() {
   const { locale: lang, t: dict, switchLocale } = useI18n()
+  const { uiOpacity, enableBlur, updateSetting: setUISettings } = useUISettings()
+  const [isTransparentUI, setIsTransparentUI] = useState(true)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -64,8 +66,6 @@ export default function App() {
   const [rightOpen, setRightOpen] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [isFloatVis, setFloatVis] = useState(false)
-  const settingsDialogRef = useRef<HTMLDialogElement | null>(null)
-
   const {
     isPlaying,
     loadAudio,
@@ -86,7 +86,7 @@ export default function App() {
   const currentTaskIdRef = useRef<string | null>(null)
   const activeWorkerRef = useRef<Worker | null>(null)
   const prevVolumeRef = useRef(1)
-  const [isSettingOpen, setIsSettingOpen] = useState(false)
+  const [isSettingOpen, setIsSettingsOpen] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -392,7 +392,7 @@ export default function App() {
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className={`relative w-full h-full overflow-hidden ${isTransparentUI ? 'backdrop-blur-md' : ''}`}>
 
       <button
         onClick={() => setFloatVis(!isFloatVis)}
@@ -401,24 +401,24 @@ export default function App() {
       >
         <AudioLines className="w-6 h-6 bg-transparent" />
       </button>
-
       <button
-        onClick={() => setIsSettingOpen(!isSettingOpen)}
+        onClick={() => setIsSettingsOpen(!isSettingOpen)}
         className="absolute bottom-4 left-4 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-700 hover:bg-zinc-800 transition-all-200 z-100                 hover:scale-105
                 active:scale-95"
       >
         <Settings className="w-6 h-6 bg-transparent" />
       </button>
 
-      <MyDialog isVisible={isSettingOpen} handleClose={() => setIsSettingOpen(false)}
+      <MyDialog
+        isVisible={isSettingOpen}
+        handleClose={() => setIsSettingsOpen(false)}
       >
-        <div className="space-y-4 text-white">
+        <div className="space-y-8 text-white">
           <div className="text-lg font-medium">{lang === 'zh' ? '語言' : 'Language'}</div>
           <select
             value={lang}
             onChange={(e) => {
               const nextLang = e.target.value
-              // settingsDialogRef.current?.close()
               switchLocale(nextLang)
               const segments = location.pathname.split("/")
               segments[1] = nextLang
@@ -429,10 +429,28 @@ export default function App() {
             <option value="en">English</option>
             <option value="zh">中文</option>
           </select>
+
+          <span className="text-lg font-medium mr-4">{lang === 'zh' ? '透明 UI' : 'Transparent UI'}</span>
+          <input
+            className="w-5 h-5"
+            type="checkbox"
+            checked={isTransparentUI}
+            onChange={(e) => {
+              setIsTransparentUI(e.target.checked)
+              if (e.target.checked) {
+                setUISettings("enableBlur", true)
+                setUISettings("uiOpacity", 0.8)
+              } else {
+                setUISettings("enableBlur", false)
+                setUISettings("uiOpacity", 1)
+              }
+            }}
+          />
+
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={() => setIsSettingOpen(false)}
+              onClick={() => setIsSettingsOpen(false)}
               className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-white hover:bg-zinc-800"
             >{lang === 'zh' ? '關閉' : 'close'}
 
@@ -457,6 +475,8 @@ export default function App() {
         onUpload={handleUpload}
         isOpen={leftOpen}
         setIsOpen={setLeftOpen}
+        uiOpacity={uiOpacity}
+        enableBlur={enableBlur}
       />
 
       <RightDrawer
@@ -464,6 +484,8 @@ export default function App() {
         isOpen={rightOpen}
         setIsOpen={setRightOpen}
         onCancel={handleCancelTask}
+        uiOpacity={uiOpacity}
+        enableBlur={enableBlur}
       />
 
       <PlaybackControls

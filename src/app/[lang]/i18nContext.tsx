@@ -1,4 +1,3 @@
-"use client"
 import React, { createContext, useContext, useState, useEffect } from "react"
 import type { Dictionary, Locale } from "../../i18n/dictionaries"
 import { getDictionary } from "../../i18n/dictionaries"

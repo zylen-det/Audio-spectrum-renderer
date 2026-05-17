@@ -33,6 +33,16 @@ export interface VisualizerSettings {
   maxFreq: number
 }
 
+export interface UISettings {
+  uiOpacity: number // 0-1, 1 為完全不透明
+  enableBlur: boolean // 是否啟用背景模糊
+}
+
+export const DEFAULT_UI_SETTINGS: UISettings = {
+  uiOpacity: 1,
+  enableBlur: true,
+}
+
 export type RenderStage =
   | "idle"
   | "analyzing"

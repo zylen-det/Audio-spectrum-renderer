@@ -6,7 +6,7 @@ import { SettingInput } from "./SettingInput"
 import { DEFAULT_SETTINGS } from "../app/[lang]/App"
 import { useI18n } from "../app/[lang]/i18nContext"
 import { Range, getTrackBackground } from "react-range"
-import { Settings } from "lucide-react";
+import { useUISettings } from "../app/[lang]/UISettingsContext";
 
 interface FloatingControlsProps {
   isPlaying: boolean
@@ -29,7 +29,7 @@ export function FloatingControls({
   visible,
 }: FloatingControlsProps) {
   const { t: dict } = useI18n()
-
+  const { uiOpacity, enableBlur } = useUISettings()
   // --- settings helpers ---
   const updateSetting = <K extends keyof VisualizerSettings>(
     key: K,
@@ -90,7 +90,8 @@ export function FloatingControls({
               initial={{ y: "-105%" }}
               animate={{ y: visible ? 0 : "-105%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="pointer-events-auto bg-zinc-950/20 backdrop-blur-sm border border-zinc-700 rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4"
+              className={`pointer-events-auto border border-zinc-700 bg-zinc-950/${uiOpacity * 100} rounded-3xl p-6 shadow-2xl max-w-[1800px] w-full flex flex-col gap-4 ${enableBlur ? 'backdrop-blur-md' : ''
+                }`}
             >
 
               <div className="flex justify-between items-end pb-4 border-b border-zinc-700 mt-2">
