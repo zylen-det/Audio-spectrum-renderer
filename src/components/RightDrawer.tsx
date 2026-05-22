@@ -55,16 +55,19 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
       >
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="absolute top-4 -left-14 w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center border-zinc-700  hover:bg-zinc-700 transition-colors"
+          className={`absolute w-10 h-10  top-4 bg-zinc-800 rounded-xl flex items-center justify-center border-zinc-700  hover:bg-zinc-700 transition-all
+            ${isOpen ? "left-2" : "-left-14"}
+          `}
         >
-          <Logs className="w-6 h-6 bg-transparent" />
+          {isOpen ? <X className="w-6 h-6 bg-transparent"></X> : <Logs className="w-6 h-6 bg-transparent" />}
+          
         </button>
 
         <div className="p-6 border-b border-zinc-700">
-          <h2 className="text-xl font-bold tracking-tight">
+          <h2 className="text-xl font-bold tracking-tight text-right">
             {dict.drawer.renderQueue}
           </h2>
-          <p className="test-sm text-zinc-500 mt-1">{queue.length} tasks</p>
+          <p className="test-sm text-zinc-500 mt-1  text-right">{queue.length} tasks</p>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
