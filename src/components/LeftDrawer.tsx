@@ -58,7 +58,7 @@ export const LeftDrawer: React.FC<LeftDrawerProps> = ({
           <span>{dict.common.upload}</span>
           <input
             type="file"
-            accept="audio/*"
+            accept="audio/*, .mp3, .wav, .m4a, .ogg"
             onChange={onUpload}
             className="hidden"
           />
