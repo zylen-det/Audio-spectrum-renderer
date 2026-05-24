@@ -52,7 +52,7 @@ export const SettingInput = ({
   return (
     <div title={title} className="space-y-2">
       <div className="flex justify-between items-center">
-        <label className="text-sm font-bold text-zinc-500   tracking-wider">
+        <label className="text-xs sm:text-sm font-bold text-zinc-500   tracking-wider">
           {label}
         </label>
         <div className="flex items-center gap-2">
