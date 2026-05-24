@@ -60,8 +60,15 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       const dt = Math.min(0.1, (time - lastTimeRef.current) / 1000)
       lastTimeRef.current = time
 
-      ctx.fillStyle = "#000" //hardcode black background for preview
-      ctx.fillRect(0, 0, rect.width, rect.height)
+      if (settings.enableTransparentBg) {
+        ctx.clearRect(0, 0, rect.width, rect.height)
+      } else if (settings.enableGreenScreen) {
+        ctx.fillStyle = "#00FF00"
+        ctx.fillRect(0, 0, rect.width, rect.height)
+      } else {
+        ctx.fillStyle = "#000" //hardcode black background for preview
+        ctx.fillRect(0, 0, rect.width, rect.height)
+      }
 
       if (isPlaying && analyser) {
         const timeData = new Float32Array(FFT_SIZE)

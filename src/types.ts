@@ -31,6 +31,8 @@ export interface VisualizerSettings {
   referenceFps: number
   minFreq: number
   maxFreq: number
+  enableGreenScreen: boolean
+  enableTransparentBg: boolean
 }
 
 export interface UISettings {

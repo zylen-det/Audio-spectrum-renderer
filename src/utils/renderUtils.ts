@@ -8,8 +8,15 @@ export const drawFrame = (
   width: number,
   height: number,
 ) => {
-  ctx.fillStyle = settings.backgroundColor || "#000"
-  ctx.fillRect(0, 0, width, height)
+  if (settings.enableTransparentBg) {
+    ctx.clearRect(0, 0, width, height)
+  } else if (settings.enableGreenScreen) {
+    ctx.fillStyle = "#00FF00"
+    ctx.fillRect(0, 0, width, height)
+  } else {
+    ctx.fillStyle = settings.backgroundColor || "#000"
+    ctx.fillRect(0, 0, width, height)
+  }
 
   if (!data) return
 

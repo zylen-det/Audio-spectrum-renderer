@@ -41,6 +41,8 @@ const DEFAULT_SETTINGS: VisualizerSettings = {
   referenceFps: 144,
   minFreq: 20,
   maxFreq: 16000,
+  enableGreenScreen: false,
+  enableTransparentBg: false,
 }
 export { DEFAULT_SETTINGS }
 

@@ -116,25 +116,44 @@ export function FloatingControls({
                     />
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs sm:text-sm font-bold text-zinc-500">
-                      {dict.controls.greenScreen || "導出綠幕"}
-                    </label>
+                 <div className="flex flex-col gap-2">
                     <label className="relative flex items-center cursor-pointer gap-2 h-8">
                       <input
                         type="checkbox"
-                        checked={settings.backgroundColor == "#00FF00"}
+                        checked={settings.enableGreenScreen}
                         onChange={(e) => {
-                          updateSetting(
-                            "backgroundColor",
-                            e.target.checked ? "#00FF00" : "",
-                          )
+                          const checked = e.target.checked
+                          onSettingsChange({
+                            ...settings,
+                            enableGreenScreen: checked,
+                            enableTransparentBg: checked ? false : settings.enableTransparentBg,
+                          })
                         }}
                         className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0"
                       />
                       <span className="text-xs sm:text-sm text-zinc-300">
-                        {dict.controls.enable} ( #00FF00 )
+                        {dict.controls.enableGreenScgeen} ( #00FF00 )
                       </span>
+
+                    </label>
+                    <label className="relative flex items-center cursor-pointer gap-2 h-8">
+                      <input
+                        type="checkbox"
+                        checked={settings.enableTransparentBg}
+                        onChange={(e) => {
+                          const checked = e.target.checked
+                          onSettingsChange({
+                            ...settings,
+                            enableTransparentBg: checked,
+                            enableGreenScreen: checked ? false : settings.enableGreenScreen,
+                          })
+                        }}
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0"
+                      />
+                      <span className="text-xs sm:text-sm text-zinc-300">
+                        {dict.controls.enableTransparentBg} ( transparent )
+                      </span>
+
                     </label>
                   </div>
 
