@@ -139,14 +139,8 @@ export function FloatingControls({
                 </div>
                 
                 <div className="w-full sm:w-56 space-y-2">
-                  <label className="text-xs sm:text-sm font-bold text-zinc-500 flex items-center gap-2">
+                  <label className="text-xs sm:text-sm font-bold text-zinc-500">
                     {dict.controls.encoder}
-                    {typeof window !== "undefined" &&
-                      !("VideoEncoder" in window) && (
-                        <span className="text-[10px] text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">
-                          Unsupported
-                        </span>
-                      )}
                   </label>
                   <div className="relative">
                     <select
@@ -159,15 +153,8 @@ export function FloatingControls({
                       }
                       className="w-full bg-zinc-800/80 border border-zinc-700/80 rounded-lg pl-3 pr-8 py-1.5 text-xs sm:text-sm text-zinc-200 outline-none focus:border-white/20 transition-colors cursor-pointer appearance-none"
                     >
-                      <option value="webcodecs-hw" disabled={typeof window !== "undefined" && !("VideoEncoder" in window)} title={typeof window !== "undefined" && !("VideoEncoder" in window) ? "WebCodecs unsupported in this browser." : dict.controls.encoderDescription.webcodecHardware} className={typeof window !== "undefined" && !("VideoEncoder" in window) ? "text-zinc-600" : ""}>
-                        WebCodec (Hardware)
-                      </option>
-                      <option value="webcodecs-sw" disabled={typeof window !== "undefined" && !("VideoEncoder" in window)} title={typeof window !== "undefined" && !("VideoEncoder" in window) ? "WebCodecs unsupported in this browser." : dict.controls.encoderDescription.webcodecSoftware} className={typeof window !== "undefined" && !("VideoEncoder" in window) ? "text-zinc-600" : ""}>
-                        WebCodec (Software)
-                      </option>
-                      <option value="ffmpeg" title={dict.controls.encoderDescription.ffmpeg}>
-                        FFmpeg
-                      </option>
+                      <option value="webcodecs-hw">{dict.controls.encoderDescription.webcodecHardware}</option>
+                      <option value="webcodecs-sw">{dict.controls.encoderDescription.webcodecSoftware}</option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-500">
                       <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

@@ -1,8 +1,6 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg"
 import { fetchFile } from "@ffmpeg/util"
 import { VisualizerSettings, RenderTask } from "../types"
-import { drawFrame } from "./renderUtils"
-import { generateASSHeader, generateASSFrame } from "./assUtils"
 
 type UpdateProgressFn = (updates: {
     status?: RenderTask["status"],
@@ -26,113 +24,44 @@ export async function runVideoRender(
 
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
     const buffer = await ctx.decodeAudioData(await file.arrayBuffer())
-    updateProgress({ stageTimestamp: { stage: 'decoding', type: 'end' } })
-
-    const channelData = buffer.getChannelData(0)
-    const sampleRate = buffer.sampleRate
     const duration = buffer.duration
+    const sampleRate = buffer.sampleRate
+    const channelData = buffer.getChannelData(0)
+    ctx.close()
 
-    let spectrumData: number[][] = []
-
-    updateProgress({ status: "rendering_frames" })
-
-    if (!task.settings.encoder.startsWith("webcodecs")) {
-        updateProgress({ stageTimestamp: { stage: 'physics', type: 'start' } })
-        spectrumData = await simulatePhysics(
-            channelData,
-            sampleRate,
-            duration,
-            task.settings,
-            (p) => updateProgress({ stageProgress: { physics: p } })
-        )
-        updateProgress({ stageTimestamp: { stage: 'physics', type: 'end' } })
-    }
+    updateProgress({ stageTimestamp: { stage: 'decoding', type: 'end' } })
     updateProgress({ stageTimestamp: { stage: 'rendering', type: 'start' } })
 
     const width = 1280
     const height = 720
-    let videoBlobUrl = ""
 
-    if (task.settings.encoder.startsWith("webcodecs")) {
-        const isHardware = task.settings.encoder === "webcodecs-hw"
-        videoBlobUrl = await renderWithWebCodecs(
-            spectrumData,
-            task.settings,
-            file,
-            ffmpeg,
-            width,
-            height,
-            duration,
-            isHardware,
-            updateProgress
-        )
-    } else {
-        videoBlobUrl = await renderWithFFmpegSoftware(
-            spectrumData,
-            task.settings,
-            file,
-            ffmpeg,
-            width,
-            height,
-            duration,
-            task.fileName,
-            updateProgress
-        )
-    }
+    const isHardware = task.settings.encoder === "webcodecs-hw"
+    const videoBlobUrl = await renderWithWebCodecs(
+        task.settings,
+        file,
+        ffmpeg,
+        channelData,
+        sampleRate,
+        duration,
+        width,
+        height,
+        isHardware,
+        updateProgress
+    )
 
     updateProgress({ status: "done", stageTimestamp: { stage: 'mixing', type: 'end' } })
     return videoBlobUrl
 }
 
-async function simulatePhysics(
-    channelData: Float32Array,
-    sampleRate: number,
-    duration: number,
-    settings: VisualizerSettings,
-    onProgress: (percent: number) => void
-): Promise<number[][]> {
-    const worker = new Worker(
-        new URL("../workers/renderWorker.ts", import.meta.url),
-        { type: "module" },
-    )
-
-    return new Promise<number[][]>((resolve, reject) => {
-        worker.onmessage = (e) => {
-            if (e.data.type === "ANALYSIS_COMPLETE") {
-                worker.terminate()
-                resolve(e.data.payload)
-            } else if (e.data.type === "PROGRESS") {
-                onProgress(Math.round(e.data.payload * 100))
-            } else if (e.data.type === "ERROR") {
-                worker.terminate()
-                reject(new Error(e.data.payload))
-            }
-        }
-        worker.postMessage(
-            {
-                type: "ANALYZE_AUDIO",
-                payload: {
-                    channelData,
-                    sampleRate,
-                    duration,
-                    settings,
-                    renderFps: settings.renderFps,
-                    simulationFps: 60,
-                },
-            },
-            [channelData.buffer.slice(0)],
-        )
-    })
-}
-
 async function renderWithWebCodecs(
-    spectrumData: number[][],
     settings: VisualizerSettings,
     audioFile: File,
     ffmpeg: FFmpeg,
+    channelData: Float32Array,
+    sampleRate: number,
+    duration: number,
     width: number,
     height: number,
-    duration: number,
     preferHardware: boolean,
     updateProgress: UpdateProgressFn,
 ): Promise<string> {
@@ -141,22 +70,15 @@ async function renderWithWebCodecs(
         { type: "module" }
     )
 
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-    const buffer = await ctx.decodeAudioData(await audioFile.arrayBuffer())
-    const channelData = buffer.getChannelData(0)
-    const sampleRate = buffer.sampleRate
-    ctx.close()
-
     const videoBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
         worker.onmessage = (e) => {
             if (e.data.type === "RENDER_COMPLETE") {
                 worker.terminate()
                 resolve(e.data.payload)
-            } else if (e.data.type === "PROGRESS") {
+            } else           if (e.data.type === "PROGRESS") {
                 const p = Math.round(e.data.payload * 100)
                 updateProgress({
                     stageProgress: {
-                        physics: p,
                         rendering: p
                     }
                 })
@@ -165,7 +87,6 @@ async function renderWithWebCodecs(
                 reject(new Error("Worker Error: " + e.data.payload))
             }
         }
-        console.log(settings.decay)
         worker.postMessage({
             type: "RENDER_VIDEO",
             payload: {
@@ -212,68 +133,5 @@ async function renderWithWebCodecs(
     updateProgress({ stageProgress: { mixing: 100 } })
 
     const data = await ffmpeg.readFile("final_hw.mp4")
-    return URL.createObjectURL(new Blob([(data as Uint8Array).buffer as any], { type: "video/mp4" }))
-}
-
-async function renderWithFFmpegSoftware(
-    spectrumData: number[][],
-    settings: VisualizerSettings,
-    audioFile: File,
-    ffmpeg: FFmpeg,
-    width: number,
-    height: number,
-    duration: number,
-    fileName: string,
-    updateProgress: UpdateProgressFn,
-): Promise<string> {
-    const fps = settings.renderFps || 30
-    let assContent = generateASSHeader(width, height, fileName)
-
-    for (let i = 0; i < spectrumData.length; i++) {
-        const startTime = i / fps
-        const endTime = (i + 1) / fps
-        assContent += generateASSFrame(startTime, endTime, spectrumData[i], settings, width, height)
-        if (i % 100 === 0) updateProgress({ stageProgress: { rendering: Math.round((i / spectrumData.length) * 100) } })
-    }
-
-    updateProgress({ stageTimestamp: { stage: 'rendering', type: 'end' } })
-    updateProgress({ status: "encoding", stageTimestamp: { stage: 'mixing', type: 'start' } })
-
-    const fontRes = await fetch("/Roboto.ttf")
-    const fontBuffer = await fontRes.arrayBuffer()
-    await ffmpeg.createDir("/fonts").catch(() => { })
-    await ffmpeg.writeFile("/fonts/Roboto.ttf", new Uint8Array(fontBuffer))
-    await ffmpeg.writeFile("audio.ext", await fetchFile(audioFile))
-    await ffmpeg.writeFile("subtitles.ass", assContent)
-
-    const onFFmpegProgress = ({ progress, time }: any) => {
-        console.log("[FFmpeg SW] progress:", progress, "time:", time);
-        if (progress > 0 && progress <= 1) {
-            updateProgress({ stageProgress: { mixing: Math.min(100, Math.max(0, Math.round(progress * 100))) } })
-        } else if (time !== undefined && duration > 0) {
-            const timeSeconds = typeof time === "number" ? time / 1000000 : 0;
-            const fallbackProgress = timeSeconds / duration;
-            updateProgress({ stageProgress: { mixing: Math.min(100, Math.max(0, Math.round(fallbackProgress * 100))) } })
-        }
-    }
-    ffmpeg.on("progress", onFFmpegProgress)
-
-    await ffmpeg.exec([
-        "-f", "lavfi",
-        "-i", `color=c=black:s=${width}x${height}:r=${fps}`,
-        "-i", "audio.ext",
-        "-vf", "ass=subtitles.ass:fontsdir=/fonts",
-        "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac",
-        "-shortest",
-        "final_sw.mp4",
-    ])
-
-    ffmpeg.off("progress", onFFmpegProgress)
-    updateProgress({ stageProgress: { mixing: 100 } })
-
-    const data = await ffmpeg.readFile("final_sw.mp4")
     return URL.createObjectURL(new Blob([(data as Uint8Array).buffer as any], { type: "video/mp4" }))
 }

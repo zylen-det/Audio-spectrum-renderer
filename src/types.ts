@@ -25,7 +25,7 @@ export interface VisualizerSettings {
   contrast: number
   yOffset: number
   renderFps: number
-  encoder: "webcodecs-hw" | "webcodecs-sw" | "ffmpeg"
+  encoder: "webcodecs-hw" | "webcodecs-sw"
   softCeilingThreshold: number
   softCeilingStrength: number
   referenceFps: number
@@ -46,7 +46,6 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
 export type RenderStage =
   | "idle"
   | "analyzing"
-  | "rendering_frames"
   | "encoding"
   | "done"
   | "error"
@@ -59,13 +58,11 @@ export interface RenderTask {
   status: RenderStage
   progress: number
   stageProgress: {
-    physics: number
     rendering: number
     mixing: number
   }
   stageTimestamps: {
     decoding?: { start: number; end?: number }
-    physics?: { start: number; end?: number }
     rendering?: { start: number; end?: number }
     mixing?: { start: number; end?: number }
   }

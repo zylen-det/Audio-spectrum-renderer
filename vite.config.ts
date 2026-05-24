@@ -13,5 +13,6 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/util"],
+    include: ["motion/react", "lucide-react", "@radix-ui/react-popover"],
   },
 })

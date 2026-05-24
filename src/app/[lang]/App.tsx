@@ -9,11 +9,9 @@ import { useAudioPlayer } from "../../hooks/useAudio"
 import { useI18n } from "./i18nContext"
 import { useUISettings } from "./UISettingsContext"
 import { AudioFile, RenderTask, VisualizerSettings } from "../../types"
-import type { FFmpeg } from "@ffmpeg/ffmpeg"
+import { FFmpeg } from "@ffmpeg/ffmpeg"
 import { fetchFile, toBlobURL } from "@ffmpeg/util"
-import { generateASSHeader, generateASSFrame } from "../../utils/assUtils"
 import { runVideoRender } from "../../utils/videoRenderer"
-import { motion } from "motion/react"
 import { PopOutButton } from "../../components/PopOutButton"
 import { PlaybackControls } from "../../components/PlaybackControls"
 import { AudioLines, Settings } from "lucide-react"
@@ -47,7 +45,6 @@ const DEFAULT_SETTINGS: VisualizerSettings = {
 export { DEFAULT_SETTINGS }
 
 const RENDER_FPS = 30
-const SIMULATION_FPS = 60
 const WIDTH = 1280
 const HEIGHT = 720
 
@@ -106,8 +103,7 @@ export default function App() {
             setQueue((prev) =>
               prev.map((t) => {
                 if (t.id !== taskId) return t
-                const stage =
-                  t.status === "rendering_frames" ? "rendering" : "mixing"
+                const stage = "mixing"
                 return {
                   ...t,
                   progress: p,
@@ -261,7 +257,6 @@ export default function App() {
       status: "idle",
       progress: 0,
       stageProgress: {
-        physics: 0,
         rendering: 0,
         mixing: 0,
       },
@@ -376,14 +371,6 @@ export default function App() {
         activeWorkerRef.current.terminate()
         activeWorkerRef.current = null
       }
-      try {
-        const ffmpeg = ffmpegRef.current
-        await ffmpeg?.deleteFile("input.mp3").catch(() => { })
-        await ffmpeg?.deleteFile("output.mp4").catch(() => { })
-      } catch (e) {
-        console.warn("Failed to clean up FFmpeg files on cancel", e)
-      }
-
       setIsProcessing(false)
       currentTaskIdRef.current = null
     }
