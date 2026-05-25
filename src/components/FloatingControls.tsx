@@ -104,7 +104,7 @@ export function FloatingControls({
               initial={{ y: "-105%" }}
               animate={{ y: visible ? 0 : "-105%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="pointer-events-auto border border-zinc-700 rounded-3xl p-12 sm:p-6 mt-12 sm:mt-0 shadow-2xl max-w-[1800px] w-full flex flex-col gap-3 sm:gap-4 backdrop-blur-md bg-zinc-950/80 max-h-[90vh] sm:max-h-none overflow-y-auto sm:overflow-visible"
+              className="pointer-events-auto border border-zinc-700 rounded-3xl p-12 sm:p-6 mt-6 sm:mt-0 shadow-2xl max-w-[1800px] w-full flex flex-col gap-3 sm:gap-4 backdrop-blur-md bg-zinc-950/80 max-h-[90vh] sm:max-h-none overflow-y-auto sm:overflow-visible"
             >
               {/* 頂部控制欄 - 手機垂直，桌面水平 */}
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 pb-3 sm:pb-4 border-b border-zinc-700 mt-2">
