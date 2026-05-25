@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { VisualizerSettings } from "../types"
 import { RotateCcw } from "lucide-react"
@@ -6,7 +6,8 @@ import { SettingInput } from "./SettingInput"
 import { DEFAULT_SETTINGS } from "../app/[lang]/App"
 import { useI18n } from "../app/[lang]/i18nContext"
 import { Range, getTrackBackground } from "react-range"
-import { useUISettings } from "../app/[lang]/UISettingsContext";
+import { useUISettings } from "../app/[lang]/UISettingsContext"
+import { isApplePlatform } from "../utils/platform"
 
 interface FloatingControlsProps {
   isPlaying: boolean
@@ -30,6 +31,21 @@ export function FloatingControls({
 }: FloatingControlsProps) {
   const { t: dict } = useI18n()
   const { uiOpacity, enableBlur } = useUISettings()
+  const isApple = isApplePlatform()
+
+  const handleSettingsChange = (newSettings: VisualizerSettings) => {
+    if (isApple && newSettings.enableTransparentBg) {
+      newSettings = { ...newSettings, enableTransparentBg: false }
+    }
+    onSettingsChange(newSettings)
+  }
+
+  useEffect(() => {
+    if (isApple && settings.enableTransparentBg) {
+      onSettingsChange({ ...settings, enableTransparentBg: false })
+    }
+  }, [])
+
   // --- settings helpers ---
   const updateSetting = <K extends keyof VisualizerSettings>(
     key: K,
@@ -116,46 +132,50 @@ export function FloatingControls({
                     />
                   </div>
 
-                 <div className="flex flex-col gap-2">
-                    <label className="relative flex items-center cursor-pointer gap-2 h-8">
-                      <input
-                        type="checkbox"
-                        checked={settings.enableGreenScreen}
-                        onChange={(e) => {
-                          const checked = e.target.checked
-                          onSettingsChange({
-                            ...settings,
-                            enableGreenScreen: checked,
-                            enableTransparentBg: checked ? false : settings.enableTransparentBg,
-                          })
-                        }}
-                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0"
-                      />
-                      <span className="text-xs sm:text-sm text-zinc-300">
-                        {dict.controls.enableGreenScgeen} ( #00FF00 )
-                      </span>
+                <div className="flex flex-col gap-2">
+                     <label className="relative flex items-center cursor-pointer gap-2 h-8">
+                       <input
+                         type="checkbox"
+                         checked={settings.enableGreenScreen}
+                         onChange={(e) => {
+                           const checked = e.target.checked
+                           handleSettingsChange({
+                             ...settings,
+                             enableGreenScreen: checked,
+                             enableTransparentBg: checked ? false : settings.enableTransparentBg,
+                           })
+                         }}
+                         disabled={isApple && settings.enableTransparentBg}
+                         className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                       />
+                       <span className="text-xs sm:text-sm text-zinc-300">
+                         {dict.controls.enableGreenScgeen} ( #00FF00 )
+                       </span>
 
-                    </label>
-                    <label className="relative flex items-center cursor-pointer gap-2 h-8">
-                      <input
-                        type="checkbox"
-                        checked={settings.enableTransparentBg}
-                        onChange={(e) => {
-                          const checked = e.target.checked
-                          onSettingsChange({
-                            ...settings,
-                            enableTransparentBg: checked,
-                            enableGreenScreen: checked ? false : settings.enableGreenScreen,
-                          })
-                        }}
-                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0"
-                      />
-                      <span className="text-xs sm:text-sm text-zinc-300">
-                        {dict.controls.enableTransparentBg} ( transparent )
-                      </span>
+                     </label>
+                     <label className="relative flex items-center cursor-pointer gap-2 h-8">
+                       <input
+                         type="checkbox"
+                         checked={settings.enableTransparentBg}
+                         onChange={(e) => {
+                           if (isApple) return
+                           const checked = e.target.checked
+                           handleSettingsChange({
+                             ...settings,
+                             enableTransparentBg: checked,
+                             enableGreenScreen: checked ? false : settings.enableGreenScreen,
+                           })
+                         }}
+                         disabled={isApple}
+                         title={isApple ? "Not supported on iOS/macOS" : ""}
+                         className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                       />
+                       <span className="text-xs sm:text-sm text-zinc-300">
+                         {dict.controls.enableTransparentBg} ( transparent )
+                       </span>
 
-                    </label>
-                  </div>
+                     </label>
+                   </div>
 
                   <div className="w-full sm:w-56 space-y-2">
                     <label className="text-xs sm:text-sm font-bold text-zinc-500">
