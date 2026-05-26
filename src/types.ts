@@ -69,6 +69,7 @@ export interface RenderTask {
     mixing?: { start: number; end?: number }
   }
   resultUrl?: string
+  resultFormat?: "mp4" | "webm"
   error?: string
   createdAt: number
 }

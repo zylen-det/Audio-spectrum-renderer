@@ -323,7 +323,7 @@ export default function App() {
     currentTaskIdRef.current = task.id
 
     try {
-      const resultUrl = await runVideoRender(
+      const { url: resultUrl, format: resultFormat } = await runVideoRender(
         task,
         file,
         ffmpeg,
@@ -359,7 +359,7 @@ export default function App() {
           )
         },
       )
-      updateTask(task.id, { status: "done", progress: 100, resultUrl })
+      updateTask(task.id, { status: "done", progress: 100, resultUrl, resultFormat })
     } catch (error: any) {
       updateTask(task.id, { status: "error", error: error.message })
     } finally {

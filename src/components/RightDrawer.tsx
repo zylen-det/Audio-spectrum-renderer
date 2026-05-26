@@ -134,7 +134,7 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
               {task.status === "done" && task.resultUrl && (
                 <a
                   href={task.resultUrl}
-                  download={`spectrum-${task.fileName}.mp4`}
+                  download={`spectrum-${task.fileName}.${task.resultFormat || "mp4"}`}
                   className="flex items-center justify-center gap-2 w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 test-sm font-bold py-2 rounded-lg transition-colors"
                 >
                   <Download size={14} />
