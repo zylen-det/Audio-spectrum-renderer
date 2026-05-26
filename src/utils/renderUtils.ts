@@ -8,6 +8,7 @@ export const drawFrame = (
   width: number,
   height: number,
 ) => {
+  const mode = settings.enableTransparentBg ? "transparent" : settings.enableGreenScreen ? "greenscreen" : "solid"
   if (settings.enableTransparentBg) {
     ctx.clearRect(0, 0, width, height)
   } else if (settings.enableGreenScreen) {
@@ -18,7 +19,10 @@ export const drawFrame = (
     ctx.fillRect(0, 0, width, height)
   }
 
-  if (!data) return
+  if (!data) {
+    console.warn("[drawFrame] data is null/undefined, mode:", mode)
+    return
+  }
 
   const { positiveBars, negativeBars } = calculateBarGeometry(
     data,
@@ -63,5 +67,24 @@ export const drawFrame = (
       }
     }
     ctx.fill()
+  }
+
+  // Log first call details
+  if (typeof (ctx as any).__logged === "undefined") {
+    ;(ctx as any).__logged = true
+    console.log("[drawFrame] First frame:", {
+      mode,
+      dataLength: data?.length,
+      dataFirst5: data?.slice(0, 5),
+      positiveBars: positiveBars.length,
+      negativeBars: negativeBars.length,
+      positiveColor: settings.positiveColor,
+      negativeColor: settings.negativeColor,
+      backgroundColor: settings.backgroundColor,
+      barCount: settings.barCount,
+    })
+    if (positiveBars.length > 0) {
+      console.log("[drawFrame] First positive bar:", positiveBars[0])
+    }
   }
 }
