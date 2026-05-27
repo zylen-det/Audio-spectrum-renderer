@@ -33,6 +33,7 @@ export interface VisualizerSettings {
   maxFreq: number
   enableGreenScreen: boolean
   enableTransparentBg: boolean
+  exportFormat: "mp4" | "webm" | "gif"
 }
 
 export interface UISettings {
@@ -69,7 +70,7 @@ export interface RenderTask {
     mixing?: { start: number; end?: number }
   }
   resultUrl?: string
-  resultFormat?: "mp4" | "webm"
+  resultFormat?: "mp4" | "webm" | "gif"
   error?: string
   createdAt: number
 }

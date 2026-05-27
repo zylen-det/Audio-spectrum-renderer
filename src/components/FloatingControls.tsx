@@ -7,7 +7,6 @@ import { DEFAULT_SETTINGS } from "../app/[lang]/App"
 import { useI18n } from "../app/[lang]/i18nContext"
 import { Range, getTrackBackground } from "react-range"
 import { useUISettings } from "../app/[lang]/UISettingsContext"
-import { isApplePlatform } from "../utils/platform"
 
 interface FloatingControlsProps {
   isPlaying: boolean
@@ -19,6 +18,7 @@ interface FloatingControlsProps {
   duration: number
   onSeek: (time: number) => void
   visible: boolean
+  supportsTransparentBg?: boolean
 }
 
 export function FloatingControls({
@@ -28,23 +28,24 @@ export function FloatingControls({
   currentTime,
   duration,
   visible,
+  supportsTransparentBg,
 }: FloatingControlsProps) {
   const { t: dict } = useI18n()
   const { uiOpacity, enableBlur } = useUISettings()
-  const isApple = isApplePlatform()
+  const transparentBgUnsupported = supportsTransparentBg === false
 
   const handleSettingsChange = (newSettings: VisualizerSettings) => {
-    if (isApple && newSettings.enableTransparentBg) {
+    if (transparentBgUnsupported && newSettings.enableTransparentBg) {
       newSettings = { ...newSettings, enableTransparentBg: false }
     }
     onSettingsChange(newSettings)
   }
 
   useEffect(() => {
-    if (isApple && settings.enableTransparentBg) {
+    if (transparentBgUnsupported && settings.enableTransparentBg) {
       onSettingsChange({ ...settings, enableTransparentBg: false })
     }
-  }, [])
+  }, [transparentBgUnsupported])
 
   // --- settings helpers ---
   const updateSetting = <K extends keyof VisualizerSettings>(
@@ -145,8 +146,7 @@ export function FloatingControls({
                              enableTransparentBg: checked ? false : settings.enableTransparentBg,
                            })
                          }}
-                         disabled={isApple && settings.enableTransparentBg}
-                         className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                        />
                        <span className="text-xs sm:text-sm text-zinc-300">
                          {dict.controls.enableGreenScgeen} ( #00FF00 )
@@ -157,17 +157,21 @@ export function FloatingControls({
                        <input
                          type="checkbox"
                          checked={settings.enableTransparentBg}
-                         onChange={(e) => {
-                           if (isApple) return
-                           const checked = e.target.checked
-                           handleSettingsChange({
-                             ...settings,
-                             enableTransparentBg: checked,
-                             enableGreenScreen: checked ? false : settings.enableGreenScreen,
-                           })
-                         }}
-                         disabled={isApple}
-                         title={isApple ? "Not supported on iOS/macOS" : ""}
+                        onChange={(e) => {
+                            if (transparentBgUnsupported) return
+                            const checked = e.target.checked
+                            const newSettings = {
+                              ...settings,
+                              enableTransparentBg: checked,
+                              enableGreenScreen: checked ? false : settings.enableGreenScreen,
+                            }
+                            if (checked && settings.exportFormat === "mp4") {
+                              newSettings.exportFormat = "gif"
+                            }
+                            handleSettingsChange(newSettings)
+                          }}
+                          disabled={transparentBgUnsupported}
+                          title={transparentBgUnsupported ? "Transparent background not supported in this browser" : ""}
                          className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                        />
                        <span className="text-xs sm:text-sm text-zinc-300">
@@ -197,6 +201,39 @@ export function FloatingControls({
                         </option>
                         <option value="webcodecs-sw" disabled={typeof window !== "undefined" && !("VideoEncoder" in window)} title={typeof window !== "undefined" && !("VideoEncoder" in window) ? "WebCodecs unsupported in this browser." : dict.controls.encoderDescription.webcodecSoftware} className={typeof window !== "undefined" && !("VideoEncoder" in window) ? "text-zinc-600" : ""}>
                           WebCodec (Software)
+                        </option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-500">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="w-full sm:w-40 space-y-2">
+                    <label className="text-xs sm:text-sm font-bold text-zinc-500">
+                      {dict.controls.exportFormat}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={settings.exportFormat || "mp4"}
+                        onChange={(e) =>
+                          updateSetting(
+                            "exportFormat",
+                            e.target.value as VisualizerSettings["exportFormat"],
+                          )
+                        }
+                        className="w-full bg-zinc-800/80 border border-zinc-700/80 rounded-lg pl-3 pr-8 py-1.5 text-xs sm:text-sm text-zinc-200 outline-none focus:border-white/20 transition-colors cursor-pointer appearance-none"
+                      >
+                        <option value="mp4" disabled={settings.enableTransparentBg} className={settings.enableTransparentBg ? "text-zinc-600" : ""}>
+                          {dict.controls.formatMp4}
+                        </option>
+                        <option value="webm">
+                          {dict.controls.formatWebm}
+                        </option>
+                        <option value="gif">
+                          {dict.controls.formatGif}
                         </option>
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-500">

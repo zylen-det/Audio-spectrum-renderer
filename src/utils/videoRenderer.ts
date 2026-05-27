@@ -14,7 +14,7 @@ export async function runVideoRender(
     file: File,
     ffmpeg: FFmpeg,
     updateProgressOriginal: UpdateProgressFn,
-): Promise<{ url: string; format: "mp4" | "webm" }> {
+): Promise<{ url: string; format: "mp4" | "webm" | "gif" }> {
     const updateProgress: UpdateProgressFn = (updates) => {
         console.log("[Render State]", updates);
         updateProgressOriginal(updates);
@@ -49,40 +49,58 @@ export async function runVideoRender(
     const height = 720
 
     const isHardware = task.settings.encoder === "webcodecs-hw"
-    const useWebM = task.settings.enableTransparentBg
+    const format = task.settings.exportFormat || "mp4"
 
-    console.log("[Render] Render config", { useWebM, isHardware, width, height })
+    console.log("[Render] Render config", { format, isHardware, width, height })
 
-    let result: { url: string; format: "mp4" | "webm" }
+    let result: { url: string; format: "mp4" | "webm" | "gif" }
 
-    if (useWebM) {
-        console.log("[Render] Starting WebM render path")
-        result = await renderWebM(
-            task.settings,
-            file,
-            ffmpeg,
-            channelData,
-            sampleRate,
-            duration,
-            width,
-            height,
-            isHardware,
-            updateProgress,
-        )
-    } else {
-        console.log("[Render] Starting MP4 render path")
-        result = await renderMP4(
-            task.settings,
-            file,
-            ffmpeg,
-            channelData,
-            sampleRate,
-            duration,
-            width,
-            height,
-            isHardware,
-            updateProgress,
-        )
+    switch (format) {
+        case "gif":
+            console.log("[Render] Starting GIF render path")
+            result = await renderGif(
+                task.settings,
+                file,
+                ffmpeg,
+                channelData,
+                sampleRate,
+                duration,
+                width,
+                height,
+                isHardware,
+                updateProgress,
+            )
+            break
+        case "webm":
+            console.log("[Render] Starting WebM render path")
+            result = await renderWebM(
+                task.settings,
+                file,
+                ffmpeg,
+                channelData,
+                sampleRate,
+                duration,
+                width,
+                height,
+                isHardware,
+                updateProgress,
+            )
+            break
+        default: // "mp4"
+            console.log("[Render] Starting MP4 render path")
+            result = await renderMP4(
+                task.settings,
+                file,
+                ffmpeg,
+                channelData,
+                sampleRate,
+                duration,
+                width,
+                height,
+                isHardware,
+                updateProgress,
+            )
+            break
     }
 
     console.log("[Render] Render complete, url:", result.url, "format:", result.format)
@@ -265,6 +283,105 @@ async function renderWebM(
             }
         }, [channelData.buffer])
     })
+}
+
+async function renderGif(
+    settings: VisualizerSettings,
+    audioFile: File,
+    ffmpeg: FFmpeg,
+    channelData: Float32Array,
+    sampleRate: number,
+    duration: number,
+    width: number,
+    height: number,
+    preferHardware: boolean,
+    updateProgress: UpdateProgressFn,
+): Promise<{ url: string; format: "gif" }> {
+    const useTransparentBg = settings.enableTransparentBg
+    const fps = Math.min(settings.renderFps || 30, 15)
+
+    console.log("[GIF] renderGif called", { duration, sampleRate, useTransparentBg, fps })
+
+    const worker = new Worker(
+        new URL("../workers/videoWorker.ts", import.meta.url),
+        { type: "module" }
+    )
+
+    const videoBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        worker.onmessage = (e) => {
+            if (e.data.type === "RENDER_COMPLETE") {
+                worker.terminate()
+                resolve(e.data.payload)
+            } else if (e.data.type === "PROGRESS") {
+                updateProgress({
+                    stageProgress: { rendering: Math.round(e.data.payload * 100) }
+                })
+            } else if (e.data.type === "ERROR") {
+                worker.terminate()
+                reject(new Error("Worker Error: " + e.data.payload))
+            } else if (e.data.type === "FALLBACK_TO_MP4") {
+                console.warn('[GIF] VP9 fallback to MP4 triggered')
+            }
+        }
+        worker.postMessage({
+            type: "RENDER_VIDEO",
+            payload: {
+                channelData,
+                sampleRate,
+                duration,
+                settings,
+                width,
+                height,
+                isHardware: preferHardware,
+            }
+        }, [channelData.buffer])
+    })
+
+    console.log("[GIF] Got video buffer from worker, size:", videoBuffer?.byteLength, "bytes")
+
+    updateProgress({ stageTimestamp: { stage: 'rendering', type: 'end' } })
+    updateProgress({ status: "encoding", stageTimestamp: { stage: 'mixing', type: 'start' } })
+
+    const inputExt = useTransparentBg ? "webm" : "mp4"
+    await ffmpeg.writeFile(`input.${inputExt}`, new Uint8Array(videoBuffer))
+
+    let filter: string
+    if (useTransparentBg) {
+        filter = `fps=${fps},split[s0][s1];[s0]palettegen=max_colors=256[p];[s1][p]paletteuse=alpha_threshold=128`
+    } else {
+        filter = `fps=${fps},scale=${width}:${height}:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=256[p];[s1][p]paletteuse=dither=bayer`
+    }
+
+    console.log("[GIF] FFmpeg filter:", filter)
+
+    const onProgress = ({ progress, time }: any) => {
+        if (progress >= 0 && progress <= 1) {
+            updateProgress({ stageProgress: { mixing: Math.min(100, Math.max(0, Math.round(progress * 100))) } })
+        } else if (time !== undefined && duration > 0) {
+            const timeSeconds = typeof time === "number" ? time / 1000000 : 0
+            const fallbackProgress = timeSeconds / duration
+            updateProgress({ stageProgress: { mixing: Math.min(100, Math.max(0, Math.round(fallbackProgress * 100))) } })
+        }
+    }
+    ffmpeg.on("progress", onProgress)
+
+    const decoderArgs = useTransparentBg ? ["-c:v", "libvpx-vp9"] : []
+
+    await ffmpeg.exec([
+        ...decoderArgs,
+        "-i", `input.${inputExt}`,
+        "-vf", filter,
+        "-loop", "0",
+        "output.gif"
+    ])
+
+    ffmpeg.off("progress", onProgress)
+    updateProgress({ stageProgress: { mixing: 100 } })
+
+    const data = await ffmpeg.readFile("output.gif")
+    const url = URL.createObjectURL(new Blob([(data as Uint8Array).buffer as any], { type: "image/gif" }))
+    console.log("[GIF] Final GIF file size:", (data as Uint8Array).byteLength, "bytes, url:", url)
+    return { url, format: "gif" }
 }
 
 async function muxWithFFmpeg(

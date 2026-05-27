@@ -43,6 +43,7 @@ const DEFAULT_SETTINGS: VisualizerSettings = {
   maxFreq: 16000,
   enableGreenScreen: false,
   enableTransparentBg: false,
+  exportFormat: "mp4",
 }
 export { DEFAULT_SETTINGS }
 
@@ -86,6 +87,13 @@ export default function App() {
   const activeWorkerRef = useRef<Worker | null>(null)
   const prevVolumeRef = useRef(1)
   const [isSettingOpen, setIsSettingsOpen] = useState(false)
+  const [supportsTransparentBg, setSupportsTransparentBg] = useState<boolean | undefined>()
+
+  useEffect(() => {
+    import("../../utils/platform").then(({ supportsVp9Alpha }) =>
+      supportsVp9Alpha().then(setSupportsTransparentBg)
+    )
+  }, [])
 
   useEffect(() => {
     const load = async () => {
@@ -502,6 +510,7 @@ export default function App() {
         duration={duration}
         onSeek={seek}
         visible={isFloatVis}
+        supportsTransparentBg={supportsTransparentBg}
       />
     </div>
   )

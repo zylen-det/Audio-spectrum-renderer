@@ -18,36 +18,31 @@ export function isApplePlatform(): boolean {
 }
 
 /**
- * Detects if the browser supports VP9 with alpha channel encoding via WebCodecs.
- * This is used as a runtime check beyond just platform detection.
+ * Detects if the browser supports VP9 Profile 3 with alpha channel encoding via WebCodecs.
+ * Uses the same codec strings and config as the actual rendering worker.
  */
 export async function supportsVp9Alpha(): Promise<boolean> {
   if (typeof VideoEncoder === "undefined") return false
 
   const configs = [
-    {
-      codec: "vp0e.00.00.00.00",
-      hardwareAcceleration: "prefer-hardware" as const,
-    },
-    {
-      codec: "vp0e.00.00.00.00",
-      hardwareAcceleration: "prefer-software" as const,
-    },
+    { codec: "vp09.03.10.08.02.01.01.01.01", hardwareAcceleration: "prefer-hardware" as const },
+    { codec: "vp09.03.10.08", hardwareAcceleration: "prefer-hardware" as const },
+    { codec: "vp09.00.10.08", hardwareAcceleration: "prefer-hardware" as const },
+    { codec: "vp09.03.10.08.02.01.01.01.01", hardwareAcceleration: "prefer-software" as const },
+    { codec: "vp09.03.10.08", hardwareAcceleration: "prefer-software" as const },
+    { codec: "vp09.00.10.08", hardwareAcceleration: "prefer-software" as const },
   ]
 
-  for (const cfg of configs) {
+  for (const { codec, hardwareAcceleration } of configs) {
     try {
       const support = await VideoEncoder.isConfigSupported({
-        ...cfg,
-        width: 1280,
-        height: 720,
-        framerate: 60,
-        bitrate: 5_000_000,
-      })
+        codec, width: 1280, height: 720,
+        framerate: 30, bitrate: 5_000_000,
+        hardwareAcceleration,
+        alpha: "keep",
+      } as VideoEncoderConfig)
       if (support.supported) return true
-    } catch {
-      continue
-    }
+    } catch { /* skip */ }
   }
 
   return false

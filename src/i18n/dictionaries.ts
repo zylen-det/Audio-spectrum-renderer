@@ -74,7 +74,11 @@ export const dictionaries = {
       mute: "Mute",
       unmute: "Unmute",
       enableGreenScgeen: "Enable Green Screen ?",
-      enableTransparentBg: "Enable Transparent Background?"
+      enableTransparentBg: "Enable Transparent Background?",
+      exportFormat: "Export Format",
+      formatMp4: "MP4 (H.264)",
+      formatWebm: "WebM (VP9)",
+      formatGif: "GIF",
     },
     drawer: {
       audioFiles: "Audio Files",
@@ -160,7 +164,11 @@ export const dictionaries = {
       mute: "靜音",
       unmute: "取消靜音",
       enableGreenScgeen: "綠幕背景 ?",
-      enableTransparentBg: "透明背景 ?"
+      enableTransparentBg: "透明背景 ?",
+      exportFormat: "導出格式",
+      formatMp4: "MP4 (H.264)",
+      formatWebm: "WebM (VP9)",
+      formatGif: "GIF",
     },
     drawer: {
       audioFiles: "音頻庫",
