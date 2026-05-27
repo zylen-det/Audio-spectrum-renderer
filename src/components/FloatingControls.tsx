@@ -1,23 +1,24 @@
-import React from "react"
-import { motion, AnimatePresence } from "motion/react"
-import { VisualizerSettings } from "../types"
-import { RotateCcw } from "lucide-react"
-import { SettingInput } from "./SettingInput"
-import { DEFAULT_SETTINGS } from "../app/[lang]/App"
-import { useI18n } from "../app/[lang]/i18nContext"
-import { Range, getTrackBackground } from "react-range"
+import React, { useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { VisualizerSettings } from "../types";
+import { RotateCcw } from "lucide-react";
+import { SettingInput } from "./SettingInput";
+import { DEFAULT_SETTINGS } from "../app/[lang]/App";
+import { useI18n } from "../app/[lang]/i18nContext";
+import { Range, getTrackBackground } from "react-range";
 import { useUISettings } from "../app/[lang]/UISettingsContext";
 
 interface FloatingControlsProps {
-  isPlaying: boolean
-  onTogglePlay: () => void
-  onRender: () => void
-  settings: VisualizerSettings
-  onSettingsChange: (newSettings: VisualizerSettings) => void
-  currentTime: number
-  duration: number
-  onSeek: (time: number) => void
-  visible: boolean
+  isPlaying: boolean;
+  onTogglePlay: () => void;
+  onRender: () => void;
+  settings: VisualizerSettings;
+  onSettingsChange: (newSettings: VisualizerSettings) => void;
+  currentTime: number;
+  duration: number;
+  onSeek: (time: number) => void;
+  visible: boolean;
+  vp9Support?: { hardware: boolean; software: boolean };
 }
 
 export function FloatingControls({
@@ -27,57 +28,101 @@ export function FloatingControls({
   currentTime,
   duration,
   visible,
+  vp9Support,
 }: FloatingControlsProps) {
-  const { t: dict } = useI18n()
-  const { uiOpacity, enableBlur } = useUISettings()
+  const { t: dict } = useI18n();
+  const { uiOpacity, enableBlur } = useUISettings();
+  const vp9Known = vp9Support !== undefined;
+  const transparentBgUnsupported =
+    vp9Known && !vp9Support.hardware && !vp9Support.software;
+  const hwUnsupportedForTransparent = vp9Known && !vp9Support.hardware;
+  const swUnsupportedForTransparent = vp9Known && !vp9Support.software;
+
+  const handleSettingsChange = (newSettings: VisualizerSettings) => {
+    if (transparentBgUnsupported && newSettings.enableTransparentBg) {
+      newSettings = { ...newSettings, enableTransparentBg: false };
+    }
+    if (newSettings.enableTransparentBg) {
+      if (
+        newSettings.encoder === "webcodecs-hw" &&
+        hwUnsupportedForTransparent
+      ) {
+        newSettings = { ...newSettings, encoder: "webcodecs-sw" };
+      } else if (
+        newSettings.encoder === "webcodecs-sw" &&
+        swUnsupportedForTransparent
+      ) {
+        newSettings = { ...newSettings, encoder: "webcodecs-hw" };
+      }
+    }
+    onSettingsChange(newSettings);
+  };
+
+  useEffect(() => {
+    if (transparentBgUnsupported && settings.enableTransparentBg) {
+      onSettingsChange({ ...settings, enableTransparentBg: false });
+    }
+    if (settings.enableTransparentBg && vp9Known) {
+      if (settings.encoder === "webcodecs-hw" && hwUnsupportedForTransparent) {
+        onSettingsChange({ ...settings, encoder: "webcodecs-sw" });
+      } else if (
+        settings.encoder === "webcodecs-sw" &&
+        swUnsupportedForTransparent
+      ) {
+        onSettingsChange({ ...settings, encoder: "webcodecs-hw" });
+      }
+    }
+  }, [vp9Known]);
+
   // --- settings helpers ---
   const updateSetting = <K extends keyof VisualizerSettings>(
     key: K,
     value: VisualizerSettings[K],
   ) => {
-    const newSettings = { ...settings, [key]: value }
+    const newSettings = { ...settings, [key]: value };
 
     if (key === "barCount") {
-      const count = value as number
-      newSettings.spacing = newSettings.totalWidth / count
+      const count = value as number;
+      newSettings.spacing = newSettings.totalWidth / count;
     } else if (key === "totalWidth") {
-      const total = value as number
-      newSettings.spacing = total / newSettings.barCount
+      const total = value as number;
+      newSettings.spacing = total / newSettings.barCount;
     } else if (key === "spacing") {
-      const space = value as number
-      newSettings.totalWidth = space * newSettings.barCount
+      const space = value as number;
+      newSettings.totalWidth = space * newSettings.barCount;
     }
-    onSettingsChange(newSettings)
-  }
+    onSettingsChange(newSettings);
+  };
 
   const resetSetting = <K extends keyof VisualizerSettings>(key: K) => {
     if (DEFAULT_SETTINGS[key] !== undefined) {
-      updateSetting(key, DEFAULT_SETTINGS[key] as VisualizerSettings[K])
+      updateSetting(key, DEFAULT_SETTINGS[key] as VisualizerSettings[K]);
     }
-  }
+  };
 
   const resetAllSettings = () => {
-    const newSettings = { ...settings }
+    const newSettings = { ...settings };
     Object.keys(DEFAULT_SETTINGS).forEach((key) => {
-      const k = key as keyof VisualizerSettings
+      const k = key as keyof VisualizerSettings;
       // @ts-ignore
-      newSettings[k] = DEFAULT_SETTINGS[k]
-    })
-    onSettingsChange(newSettings)
-  }
+      newSettings[k] = DEFAULT_SETTINGS[k];
+    });
+    onSettingsChange(newSettings);
+  };
 
   const formatTime = (t: number) => {
-    const m = Math.floor(t / 60)
-    const s = Math.floor(t % 60)
-    return `${m}:${s.toString().padStart(2, "0")}`
-  }
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
 
-  const progressPercentage = ((currentTime - 0) * 100) / ((duration || 100) - 0)
+  const progressPercentage =
+    ((currentTime - 0) * 100) / ((duration || 100) - 0);
 
   const updateFrequencyRange = (vals: number[]) => {
-    const newSettings = { ...settings, minFreq: vals[0], maxFreq: vals[1] }
-    onSettingsChange(newSettings)
-  }
+    const newSettings = { ...settings, minFreq: vals[0], maxFreq: vals[1] };
+    onSettingsChange(newSettings);
+  };
 
   return (
     <div className="fixed top-0 left-0 w-full h-full z-30 pointer-events-none">
@@ -97,7 +142,10 @@ export function FloatingControls({
                     onClick={resetAllSettings}
                     className="text-xs sm:text-sm font-bold text-zinc-500 hover:text-white transition-colors flex items-center gap-1"
                   >
-                    <RotateCcw size={14} className="sm:w-[14px] sm:h-[14px] w-3 h-3" />
+                    <RotateCcw
+                      size={14}
+                      className="sm:w-[14px] sm:h-[14px] w-3 h-3"
+                    />
                     {dict.controls.resetAll}
                   </button>
                 </div>
@@ -117,36 +165,62 @@ export function FloatingControls({
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs sm:text-sm font-bold text-zinc-500">
-                      {dict.controls.greenScreen || "導出綠幕"}
+                    <label className="relative flex items-center cursor-pointer gap-2 h-8">
+                      <input
+                        type="checkbox"
+                        checked={settings.enableGreenScreen}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          handleSettingsChange({
+                            ...settings,
+                            enableGreenScreen: checked,
+                            enableTransparentBg: checked
+                              ? false
+                              : settings.enableTransparentBg,
+                          });
+                        }}
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                      <span className="text-xs sm:text-sm text-zinc-300">
+                        {dict.controls.enableGreenScgeen} ( #00FF00 )
+                      </span>
                     </label>
                     <label className="relative flex items-center cursor-pointer gap-2 h-8">
                       <input
                         type="checkbox"
-                        checked={settings.backgroundColor == "#00FF00"}
+                        checked={settings.enableTransparentBg}
                         onChange={(e) => {
-                          updateSetting(
-                            "backgroundColor",
-                            e.target.checked ? "#00FF00" : "",
-                          )
+                          if (transparentBgUnsupported) return;
+                          const checked = e.target.checked;
+                          const newSettings = {
+                            ...settings,
+                            enableTransparentBg: checked,
+                            enableGreenScreen: checked
+                              ? false
+                              : settings.enableGreenScreen,
+                          };
+                          if (checked && settings.exportFormat === "mp4") {
+                            newSettings.exportFormat = "gif";
+                          }
+                          handleSettingsChange(newSettings);
                         }}
-                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0"
+                        disabled={transparentBgUnsupported}
+                        title={
+                          transparentBgUnsupported
+                            ? "Transparent background not supported in this browser"
+                            : ""
+                        }
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <span className="text-xs sm:text-sm text-zinc-300">
-                        {dict.controls.enable} ( #00FF00 )
+                        {dict.controls.enableTransparentBg} ( transparent )
                       </span>
                     </label>
                   </div>
 
                   <div className="w-full sm:w-56 space-y-2">
-                    <label className="text-xs sm:text-sm font-bold text-zinc-500 flex items-center gap-2">
+                    <label className="text-xs sm:text-sm font-bold text-zinc-500">
                       {dict.controls.encoder}
-                      {typeof window !== "undefined" &&
-                        !("VideoEncoder" in window) && (
-                          <span className="text-[10px] text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">
-                            Unsupported
-                          </span>
-                        )}
                     </label>
                     <div className="relative">
                       <select
@@ -159,18 +233,111 @@ export function FloatingControls({
                         }
                         className="w-full bg-zinc-800/80 border border-zinc-700/80 rounded-lg pl-3 pr-8 py-1.5 text-xs sm:text-sm text-zinc-200 outline-none focus:border-white/20 transition-colors cursor-pointer appearance-none"
                       >
-                        <option value="webcodecs-hw" disabled={typeof window !== "undefined" && !("VideoEncoder" in window)} title={typeof window !== "undefined" && !("VideoEncoder" in window) ? "WebCodecs unsupported in this browser." : dict.controls.encoderDescription.webcodecHardware} className={typeof window !== "undefined" && !("VideoEncoder" in window) ? "text-zinc-600" : ""}>
+                        <option
+                          value="webcodecs-hw"
+                          disabled={
+                            (typeof window !== "undefined" &&
+                              !("VideoEncoder" in window)) ||
+                            (settings.enableTransparentBg &&
+                              hwUnsupportedForTransparent)
+                          }
+                          title={
+                            typeof window !== "undefined" &&
+                            !("VideoEncoder" in window)
+                              ? "WebCodecs unsupported in this browser."
+                              : settings.enableTransparentBg &&
+                                  hwUnsupportedForTransparent
+                                ? "Hardware VP9+alpha not supported"
+                                : dict.controls.encoderDescription
+                                    .webcodecHardware
+                          }
+                          className={
+                            (typeof window !== "undefined" &&
+                              !("VideoEncoder" in window)) ||
+                            (settings.enableTransparentBg &&
+                              hwUnsupportedForTransparent)
+                              ? "text-zinc-600"
+                              : ""
+                          }
+                        >
                           WebCodec (Hardware)
                         </option>
-                        <option value="webcodecs-sw" disabled={typeof window !== "undefined" && !("VideoEncoder" in window)} title={typeof window !== "undefined" && !("VideoEncoder" in window) ? "WebCodecs unsupported in this browser." : dict.controls.encoderDescription.webcodecSoftware} className={typeof window !== "undefined" && !("VideoEncoder" in window) ? "text-zinc-600" : ""}>
+                        <option
+                          value="webcodecs-sw"
+                          disabled={
+                            (typeof window !== "undefined" &&
+                              !("VideoEncoder" in window)) ||
+                            (settings.enableTransparentBg &&
+                              swUnsupportedForTransparent)
+                          }
+                          title={
+                            typeof window !== "undefined" &&
+                            !("VideoEncoder" in window)
+                              ? "WebCodecs unsupported in this browser."
+                              : settings.enableTransparentBg &&
+                                  swUnsupportedForTransparent
+                                ? "Software VP9+alpha not supported"
+                                : dict.controls.encoderDescription
+                                    .webcodecSoftware
+                          }
+                          className={
+                            (typeof window !== "undefined" &&
+                              !("VideoEncoder" in window)) ||
+                            (settings.enableTransparentBg &&
+                              swUnsupportedForTransparent)
+                              ? "text-zinc-600"
+                              : ""
+                          }
+                        >
                           WebCodec (Software)
-                        </option>
-                        <option value="ffmpeg" title={dict.controls.encoderDescription.ffmpeg}>
-                          FFmpeg
                         </option>
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-500">
-                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <svg
+                          className="fill-current h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="w-full sm:w-40 space-y-2">
+                    <label className="text-xs sm:text-sm font-bold text-zinc-500">
+                      {dict.controls.exportFormat}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={settings.exportFormat || "mp4"}
+                        onChange={(e) =>
+                          updateSetting(
+                            "exportFormat",
+                            e.target
+                              .value as VisualizerSettings["exportFormat"],
+                          )
+                        }
+                        className="w-full bg-zinc-800/80 border border-zinc-700/80 rounded-lg pl-3 pr-8 py-1.5 text-xs sm:text-sm text-zinc-200 outline-none focus:border-white/20 transition-colors cursor-pointer appearance-none"
+                      >
+                        <option
+                          value="mp4"
+                          disabled={settings.enableTransparentBg}
+                          className={
+                            settings.enableTransparentBg ? "text-zinc-600" : ""
+                          }
+                        >
+                          {dict.controls.formatMp4}
+                        </option>
+                        <option value="webm">{dict.controls.formatWebm}</option>
+                        <option value="gif">{dict.controls.formatGif}</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-500">
+                        <svg
+                          className="fill-current h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                        >
                           <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                         </svg>
                       </div>
@@ -188,7 +355,6 @@ export function FloatingControls({
 
               {/* 主要設置區域 - 手機單列，桌面多列 */}
               <div className="grid grid-cols-1 sm:grid-cols-8 gap-4 sm:gap-x-6 sm:gap-y-2 items-start">
-
                 {/* 布局設置 */}
                 <div className="sm:col-span-2 space-y-2">
                   <h3 className="text-xs sm:text-sm font-bold text-zinc-400 tracking-wider border-b border-zinc-700 pb-1 mb-2">
@@ -270,13 +436,31 @@ export function FloatingControls({
                       <label className="text-xs sm:text-sm font-bold text-zinc-500">
                         {dict.controls.color}
                       </label>
-                      <button onClick={() => resetSetting("positiveColor")} className="text-zinc-600 hover:text-zinc-400 transition-colors" title="Reset to default">
+                      <button
+                        onClick={() => resetSetting("positiveColor")}
+                        className="text-zinc-600 hover:text-zinc-400 transition-colors"
+                        title="Reset to default"
+                      >
                         <RotateCcw size={12} />
                       </button>
                     </div>
                     <div className="flex gap-2">
-                      <input type="color" value={settings.positiveColor} onChange={(e) => updateSetting("positiveColor", e.target.value)} className="h-6 w-8 rounded cursor-pointer bg-transparent border-none" />
-                      <input type="text" value={settings.positiveColor} onChange={(e) => updateSetting("positiveColor", e.target.value)} className="bg-zinc-800 text-xs sm:text-sm rounded px-2 py-1 w-full border border-zinc-700 text-zinc-300 font-mono h-6" />
+                      <input
+                        type="color"
+                        value={settings.positiveColor}
+                        onChange={(e) =>
+                          updateSetting("positiveColor", e.target.value)
+                        }
+                        className="h-6 w-8 rounded cursor-pointer bg-transparent border-none"
+                      />
+                      <input
+                        type="text"
+                        value={settings.positiveColor}
+                        onChange={(e) =>
+                          updateSetting("positiveColor", e.target.value)
+                        }
+                        className="bg-zinc-800 text-xs sm:text-sm rounded px-2 py-1 w-full border border-zinc-700 text-zinc-300 font-mono h-6"
+                      />
                     </div>
                   </div>
                 </div>
@@ -301,13 +485,31 @@ export function FloatingControls({
                       <label className="text-xs sm:text-sm font-bold text-zinc-500">
                         {dict.controls.color}
                       </label>
-                      <button onClick={() => resetSetting("negativeColor")} className="text-zinc-600 hover:text-zinc-400 transition-colors" title="Reset to default">
+                      <button
+                        onClick={() => resetSetting("negativeColor")}
+                        className="text-zinc-600 hover:text-zinc-400 transition-colors"
+                        title="Reset to default"
+                      >
                         <RotateCcw size={12} />
                       </button>
                     </div>
                     <div className="flex gap-2">
-                      <input type="color" value={settings.negativeColor} onChange={(e) => updateSetting("negativeColor", e.target.value)} className="h-6 w-8 rounded cursor-pointer bg-transparent border-none" />
-                      <input type="text" value={settings.negativeColor} onChange={(e) => updateSetting("negativeColor", e.target.value)} className="bg-zinc-800 text-xs sm:text-sm rounded px-2 py-1 w-full border border-zinc-700 text-zinc-300 font-mono h-6" />
+                      <input
+                        type="color"
+                        value={settings.negativeColor}
+                        onChange={(e) =>
+                          updateSetting("negativeColor", e.target.value)
+                        }
+                        className="h-6 w-8 rounded cursor-pointer bg-transparent border-none"
+                      />
+                      <input
+                        type="text"
+                        value={settings.negativeColor}
+                        onChange={(e) =>
+                          updateSetting("negativeColor", e.target.value)
+                        }
+                        className="bg-zinc-800 text-xs sm:text-sm rounded px-2 py-1 w-full border border-zinc-700 text-zinc-300 font-mono h-6"
+                      />
                     </div>
                   </div>
                 </div>
@@ -413,7 +615,11 @@ export function FloatingControls({
                       </label>
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => resetSetting("minFreq")} className="text-zinc-600 hover:text-zinc-400 transition-colors p-1" title="Reset to default">
+                          <button
+                            onClick={() => resetSetting("minFreq")}
+                            className="text-zinc-600 hover:text-zinc-400 transition-colors p-1"
+                            title="Reset to default"
+                          >
                             <RotateCcw size={12} />
                           </button>
                           <input
@@ -430,11 +636,19 @@ export function FloatingControls({
                             min={20}
                             max={24000}
                           />
-                          <span className="text-xs sm:text-sm text-zinc-500">Hz</span>
+                          <span className="text-xs sm:text-sm text-zinc-500">
+                            Hz
+                          </span>
                         </div>
-                        <span className="text-xs sm:text-sm text-zinc-500">-</span>
+                        <span className="text-xs sm:text-sm text-zinc-500">
+                          -
+                        </span>
                         <div className="flex items-center gap-2">
-                          <button onClick={() => resetSetting("maxFreq")} className="text-zinc-600 hover:text-zinc-400 transition-colors p-1" title="Reset to default">
+                          <button
+                            onClick={() => resetSetting("maxFreq")}
+                            className="text-zinc-600 hover:text-zinc-400 transition-colors p-1"
+                            title="Reset to default"
+                          >
                             <RotateCcw size={12} />
                           </button>
                           <input
@@ -451,14 +665,19 @@ export function FloatingControls({
                             min={20}
                             max={24000}
                           />
-                          <span className="text-xs sm:text-sm text-zinc-500">Hz</span>
+                          <span className="text-xs sm:text-sm text-zinc-500">
+                            Hz
+                          </span>
                         </div>
                       </div>
                     </div>
                     <div className="mt-2">
                       <Range
                         draggableTrack
-                        values={[settings.minFreq || 20, settings.maxFreq || 16000]}
+                        values={[
+                          settings.minFreq || 20,
+                          settings.maxFreq || 16000,
+                        ]}
                         step={1}
                         min={20}
                         max={24000}
@@ -481,7 +700,10 @@ export function FloatingControls({
                                 width: "100%",
                                 borderRadius: "4px",
                                 background: getTrackBackground({
-                                  values: [settings.minFreq || 20, settings.maxFreq || 16000],
+                                  values: [
+                                    settings.minFreq || 20,
+                                    settings.maxFreq || 16000,
+                                  ],
                                   colors: ["#27272a", "#9f9fa9", "#27272a"],
                                   min: 20,
                                   max: 24000,
@@ -519,5 +741,5 @@ export function FloatingControls({
         </div>
       </div>
     </div>
-  )
+  );
 }

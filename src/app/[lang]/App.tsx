@@ -1,23 +1,20 @@
-
-import React, { useState, useEffect, useRef } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
-import { Visualizer } from "../../components/Visualizer"
-import { FloatingControls } from "../../components/FloatingControls"
-import { LeftDrawer } from "../../components/LeftDrawer"
-import { RightDrawer } from "../../components/RightDrawer"
-import { useAudioPlayer } from "../../hooks/useAudio"
-import { useI18n } from "./i18nContext"
-import { useUISettings } from "./UISettingsContext"
-import { AudioFile, RenderTask, VisualizerSettings } from "../../types"
-import type { FFmpeg } from "@ffmpeg/ffmpeg"
-import { fetchFile, toBlobURL } from "@ffmpeg/util"
-import { generateASSHeader, generateASSFrame } from "../../utils/assUtils"
-import { runVideoRender } from "../../utils/videoRenderer"
-import { motion } from "motion/react"
-import { PopOutButton } from "../../components/PopOutButton"
-import { PlaybackControls } from "../../components/PlaybackControls"
-import { AudioLines, Settings } from "lucide-react"
-import { MyDialog } from "../../components/MyDialog"
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Visualizer } from "../../components/Visualizer";
+import { FloatingControls } from "../../components/FloatingControls";
+import { LeftDrawer } from "../../components/LeftDrawer";
+import { RightDrawer } from "../../components/RightDrawer";
+import { useAudioPlayer } from "../../hooks/useAudio";
+import { useI18n } from "./i18nContext";
+import { useUISettings } from "./UISettingsContext";
+import { AudioFile, RenderTask, VisualizerSettings } from "../../types";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import { runVideoRender } from "../../utils/videoRenderer";
+import { PopOutButton } from "../../components/PopOutButton";
+import { PlaybackControls } from "../../components/PlaybackControls";
+import { AudioLines, Settings } from "lucide-react";
+import { MyDialog } from "../../components/MyDialog";
 
 const DEFAULT_SETTINGS: VisualizerSettings = {
   barCount: 64,
@@ -43,29 +40,36 @@ const DEFAULT_SETTINGS: VisualizerSettings = {
   referenceFps: 144,
   minFreq: 20,
   maxFreq: 16000,
-}
-export { DEFAULT_SETTINGS }
+  enableGreenScreen: false,
+  enableTransparentBg: false,
+  exportFormat: "mp4",
+};
+export { DEFAULT_SETTINGS };
 
-const RENDER_FPS = 30
-const SIMULATION_FPS = 60
-const WIDTH = 1280
-const HEIGHT = 720
+const RENDER_FPS = 30;
+const WIDTH = 1280;
+const HEIGHT = 720;
 
 export default function App() {
-  const { locale: lang, t: dict, switchLocale } = useI18n()
-  const { uiOpacity, enableBlur, updateSetting: setUISettings } = useUISettings()
-  const [isTransparentUI, setIsTransparentUI] = useState(true)
-  const navigate = useNavigate()
-  const location = useLocation()
+  const { locale: lang, t: dict, switchLocale } = useI18n();
+  const {
+    uiOpacity,
+    enableBlur,
+    updateSetting: setUISettings,
+  } = useUISettings();
+  const [isTransparentUI, setIsTransparentUI] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [files, setFiles] = useState<AudioFile[]>([])
-  const [currentFileId, setCurrentFileId] = useState<string | null>(null)
-  const [currentFileIndex, setCurrentFileIndex] = useState(0)
-  const [settings, setSettings] = useState<VisualizerSettings>(DEFAULT_SETTINGS)
-  const [leftOpen, setLeftOpen] = useState(false)
-  const [rightOpen, setRightOpen] = useState(false)
-  const [isMuted, setIsMuted] = useState(false)
-  const [isFloatVis, setFloatVis] = useState(false)
+  const [files, setFiles] = useState<AudioFile[]>([]);
+  const [currentFileId, setCurrentFileId] = useState<string | null>(null);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [settings, setSettings] =
+    useState<VisualizerSettings>(DEFAULT_SETTINGS);
+  const [leftOpen, setLeftOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isFloatVis, setFloatVis] = useState(false);
   const {
     isPlaying,
     loadAudio,
@@ -77,46 +81,54 @@ export default function App() {
     audioBuffer,
     volume,
     setVolume,
-  } = useAudioPlayer(files, currentFileIndex)
+  } = useAudioPlayer(files, currentFileIndex);
 
-  const [queue, setQueue] = useState<RenderTask[]>([])
-  const [isProcessing, setIsProcessing] = useState(false)
-  const ffmpegRef = useRef<FFmpeg | null>(null)
-  const [ffmpegLoaded, setFfmpegLoaded] = useState(false)
-  const currentTaskIdRef = useRef<string | null>(null)
-  const activeWorkerRef = useRef<Worker | null>(null)
-  const prevVolumeRef = useRef(1)
-  const [isSettingOpen, setIsSettingsOpen] = useState(false)
+  const [queue, setQueue] = useState<RenderTask[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const ffmpegRef = useRef<FFmpeg | null>(null);
+  const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
+  const currentTaskIdRef = useRef<string | null>(null);
+  const activeWorkerRef = useRef<Worker | null>(null);
+  const prevVolumeRef = useRef(1);
+  const [isSettingOpen, setIsSettingsOpen] = useState(false);
+  const [vp9Support, setVp9Support] = useState<
+    { hardware: boolean; software: boolean } | undefined
+  >();
+
+  useEffect(() => {
+    import("../../utils/platform").then(({ checkVp9AlphaSupport }) =>
+      checkVp9AlphaSupport().then(setVp9Support),
+    );
+  }, []);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const { FFmpeg } = await import("@ffmpeg/ffmpeg")
-        const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm"
+        const { FFmpeg } = await import("@ffmpeg/ffmpeg");
+        const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
         if (!ffmpegRef.current) {
-          ffmpegRef.current = new FFmpeg()
+          ffmpegRef.current = new FFmpeg();
         }
-        const ffmpeg = ffmpegRef.current
-        ffmpeg.on("log", ({ message }) => console.log("[FFmpeg]", message))
+        const ffmpeg = ffmpegRef.current;
+        ffmpeg.on("log", ({ message }) => console.log("[FFmpeg]", message));
 
         ffmpeg.on("progress", ({ progress }) => {
-          const taskId = currentTaskIdRef.current
+          const taskId = currentTaskIdRef.current;
           if (taskId) {
-            const p = Math.round(progress * 100)
+            const p = Math.round(progress * 100);
             setQueue((prev) =>
               prev.map((t) => {
-                if (t.id !== taskId) return t
-                const stage =
-                  t.status === "rendering_frames" ? "rendering" : "mixing"
+                if (t.id !== taskId) return t;
+                const stage = "mixing";
                 return {
                   ...t,
                   progress: p,
                   stageProgress: { ...t.stageProgress, [stage]: p },
-                }
+                };
               }),
-            )
+            );
           }
-        })
+        });
 
         await ffmpeg.load({
           coreURL: await toBlobURL(
@@ -127,44 +139,44 @@ export default function App() {
             `${baseURL}/ffmpeg-core.wasm`,
             "application/wasm",
           ),
-        })
-        setFfmpegLoaded(true)
+        });
+        setFfmpegLoaded(true);
       } catch (err) {
-        console.error("FFmpeg load failed", err)
+        console.error("FFmpeg load failed", err);
       }
-    }
-    load()
-  }, [])
+    };
+    load();
+  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       // alert when queue
       if (queue.length > 0 || files.length > 0) {
-        e.preventDefault()
+        e.preventDefault();
         // routine, set returnValue
-        e.returnValue = "工作進度不被保存"
-        return e.returnValue
+        e.returnValue = "工作進度不被保存";
+        return e.returnValue;
       }
-    }
+    };
 
-    window.addEventListener("beforeunload", handleBeforeUnload)
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload)
-    }
-  }, [queue.length, files.length])
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [queue.length, files.length]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     const ctx = new (
       window.AudioContext || (window as any).webkitAudioContext
-    )()
-    const buffer = await file.arrayBuffer()
-    const audioBuffer = await ctx.decodeAudioData(buffer)
-    const duration = audioBuffer.duration
-    ctx.close()
+    )();
+    const buffer = await file.arrayBuffer();
+    const audioBuffer = await ctx.decodeAudioData(buffer);
+    const duration = audioBuffer.duration;
+    ctx.close();
 
     const newFile: AudioFile = {
       id: crypto.randomUUID(),
@@ -173,85 +185,84 @@ export default function App() {
       size: file.size,
       duration,
       url: URL.createObjectURL(file),
-    }
+    };
 
-    setFiles((prev) => [newFile, ...prev])
+    setFiles((prev) => [newFile, ...prev]);
     if (!currentFileId) {
-      handleSelectFile(newFile)
+      handleSelectFile(newFile);
     }
-  }
+  };
 
   const handleSelectFile = async (file: AudioFile) => {
-    const idx = files.findIndex((f) => f.id === file.id)
-    setCurrentFileId(file.id)
-    setCurrentFileIndex(idx >= 0 ? idx : currentFileIndex)
-    await loadAudio(file.file)
-  }
+    const idx = files.findIndex((f) => f.id === file.id);
+    setCurrentFileId(file.id);
+    setCurrentFileIndex(idx >= 0 ? idx : currentFileIndex);
+    await loadAudio(file.file);
+  };
 
   const handleDeleteFile = (id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id))
+    setFiles((prev) => prev.filter((f) => f.id !== id));
     if (currentFileId === id) {
-      setCurrentFileId(null)
-      setCurrentFileIndex(-1)
+      setCurrentFileId(null);
+      setCurrentFileIndex(-1);
     }
-  }
+  };
 
   const handleToggleMute = () => {
-    console.log(prevVolumeRef.current)
+    console.log(prevVolumeRef.current);
     if (isMuted) {
       // 取消靜音：恢復之前的音量
-      setVolume(prevVolumeRef.current)
-      setIsMuted(false)
+      setVolume(prevVolumeRef.current);
+      setIsMuted(false);
     } else {
       // 只有當目前音量 > 0 時才記錄（避免覆蓋掉正確的 prevVolume）
       if (volume > 0) {
-        prevVolumeRef.current = volume
+        prevVolumeRef.current = volume;
       }
-      setVolume(0)
-      setIsMuted(true)
+      setVolume(0);
+      setIsMuted(true);
     }
-  }
+  };
 
   const handleVolumeChange = (vol: number) => {
-    setVolume(vol)
+    setVolume(vol);
     if (vol > 0 && isMuted) {
-      setIsMuted(false)
+      setIsMuted(false);
     }
-  }
-
+  };
 
   const handlePrev = () => {
-    if (files.length === 0) return undefined
-    let idx: number
+    if (files.length === 0) return undefined;
+    let idx: number;
     if (currentFileIndex <= 0) {
-      idx = files.length - 1
-      handleSelectFile(files[files.length - 1])
+      idx = files.length - 1;
+      handleSelectFile(files[files.length - 1]);
     } else {
-      idx = currentFileIndex - 1
-      handleSelectFile(files[currentFileIndex - 1])
+      idx = currentFileIndex - 1;
+      handleSelectFile(files[currentFileIndex - 1]);
     }
-    setCurrentFileIndex(idx)
-    return idx
-  }
+    setCurrentFileIndex(idx);
+    return idx;
+  };
 
   const handleNext = () => {
-    if (files.length === 0) return undefined
-    let idx: number
+    if (files.length === 0) return undefined;
+    let idx: number;
     if (currentFileIndex >= files.length - 1) {
-      idx = 0
-      handleSelectFile(files[0])
+      idx = 0;
+      handleSelectFile(files[0]);
     } else {
-      idx = currentFileIndex + 1
-      handleSelectFile(files[currentFileIndex + 1])
+      idx = currentFileIndex + 1;
+      handleSelectFile(files[currentFileIndex + 1]);
     }
-    setCurrentFileIndex(idx)
-    return idx
-  }
+    setCurrentFileIndex(idx);
+    return idx;
+  };
 
   const handleAddToQueue = () => {
-    if (!currentFileId) return
-    const file = files.find((f) => f.id === currentFileId)
-    if (!file) return
+    if (!currentFileId) return;
+    const file = files.find((f) => f.id === currentFileId);
+    if (!file) return;
 
     const task: RenderTask = {
       id: crypto.randomUUID(),
@@ -261,26 +272,25 @@ export default function App() {
       status: "idle",
       progress: 0,
       stageProgress: {
-        physics: 0,
         rendering: 0,
         mixing: 0,
       },
       stageTimestamps: {},
       createdAt: Date.now(),
-    }
+    };
 
-    setQueue((prev) => [...prev, task])
-    setRightOpen(true)
-  }
+    setQueue((prev) => [...prev, task]);
+    setRightOpen(true);
+  };
 
   useEffect(() => {
     const processNext = async () => {
-      if (isProcessing || !ffmpegLoaded) return
+      if (isProcessing || !ffmpegLoaded) return;
 
-      const nextTask = queue.find((t) => t.status === "idle")
-      if (!nextTask) return
+      const nextTask = queue.find((t) => t.status === "idle");
+      if (!nextTask) return;
 
-      const fileObj = files.find((f) => f.id === nextTask.fileId)
+      const fileObj = files.find((f) => f.id === nextTask.fileId);
       if (!fileObj) {
         setQueue((prev) =>
           prev.map((t) =>
@@ -288,14 +298,14 @@ export default function App() {
               ? { ...t, status: "error", error: "File not found" }
               : t,
           ),
-        )
-        return
+        );
+        return;
       }
 
-      setIsProcessing(true)
+      setIsProcessing(true);
 
       try {
-        await runRender(nextTask, fileObj.file)
+        await runRender(nextTask, fileObj.file);
       } catch (err: any) {
         setQueue((prev) =>
           prev.map((t) =>
@@ -303,107 +313,104 @@ export default function App() {
               ? { ...t, status: "error", error: err.message }
               : t,
           ),
-        )
+        );
       } finally {
-        setIsProcessing(false)
+        setIsProcessing(false);
       }
-    }
+    };
 
-    processNext()
-  }, [queue, isProcessing, ffmpegLoaded, files])
+    processNext();
+  }, [queue, isProcessing, ffmpegLoaded, files]);
 
   const updateTask = (id: string, updates: Partial<RenderTask>) => {
     setQueue((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...updates } : t)),
-    )
-  }
+    );
+  };
 
   const runRender = async (task: RenderTask, file: File) => {
     if (!ffmpegRef.current) {
-      throw new Error("FFmpeg is not loaded")
+      throw new Error("FFmpeg is not loaded");
     }
-    const ffmpeg = ffmpegRef.current
-    currentTaskIdRef.current = task.id
+    const ffmpeg = ffmpegRef.current;
+    currentTaskIdRef.current = task.id;
 
     try {
-      const resultUrl = await runVideoRender(
+      const { url: resultUrl, format: resultFormat } = await runVideoRender(
         task,
         file,
         ffmpeg,
         (updates: any) => {
-          const taskId = task.id
+          const taskId = task.id;
           setQueue((prev) =>
             prev.map((t) => {
-              if (t.id !== taskId) return t
-              const next = { ...t, ...updates }
+              if (t.id !== taskId) return t;
+              const next = { ...t, ...updates };
               if (updates.stageProgress) {
                 next.stageProgress = {
                   ...t.stageProgress,
                   ...updates.stageProgress,
-                }
+                };
               }
               if (updates.stageTimestamp) {
-                const stage = updates.stageTimestamp.stage as keyof typeof t.stageTimestamps
-                const type = updates.stageTimestamp.type as "start" | "end"
-                const now = Date.now()
-                const currentTimestamps = { ...t.stageTimestamps }
+                const stage = updates.stageTimestamp
+                  .stage as keyof typeof t.stageTimestamps;
+                const type = updates.stageTimestamp.type as "start" | "end";
+                const now = Date.now();
+                const currentTimestamps = { ...t.stageTimestamps };
                 if (type === "start") {
-                  currentTimestamps[stage] = { start: now }
+                  currentTimestamps[stage] = { start: now };
                 } else if (type === "end" && currentTimestamps[stage]) {
                   currentTimestamps[stage] = {
                     ...currentTimestamps[stage],
                     end: now,
-                  }
+                  };
                 }
-                next.stageTimestamps = currentTimestamps
+                next.stageTimestamps = currentTimestamps;
               }
-              return next
+              return next;
             }),
-          )
+          );
         },
-      )
-      updateTask(task.id, { status: "done", progress: 100, resultUrl })
+      );
+      updateTask(task.id, {
+        status: "done",
+        progress: 100,
+        resultUrl,
+        resultFormat,
+      });
     } catch (error: any) {
-      updateTask(task.id, { status: "error", error: error.message })
+      updateTask(task.id, { status: "error", error: error.message });
     } finally {
-      currentTaskIdRef.current = null
+      currentTaskIdRef.current = null;
     }
-  }
+  };
 
   const handleCancelTask = async (taskId: string) => {
     if (currentTaskIdRef.current === taskId) {
       if (activeWorkerRef.current) {
-        activeWorkerRef.current.terminate()
-        activeWorkerRef.current = null
+        activeWorkerRef.current.terminate();
+        activeWorkerRef.current = null;
       }
-      try {
-        const ffmpeg = ffmpegRef.current
-        await ffmpeg?.deleteFile("input.mp3").catch(() => { })
-        await ffmpeg?.deleteFile("output.mp4").catch(() => { })
-      } catch (e) {
-        console.warn("Failed to clean up FFmpeg files on cancel", e)
-      }
-
-      setIsProcessing(false)
-      currentTaskIdRef.current = null
+      setIsProcessing(false);
+      currentTaskIdRef.current = null;
     }
 
-    setQueue((prev) => prev.filter((t) => t.id !== taskId))
-  }
+    setQueue((prev) => prev.filter((t) => t.id !== taskId));
+  };
 
   return (
     <div className={`relative w-full h-full overflow-hidden`}>
-
       <button
         onClick={() => setFloatVis(!isFloatVis)}
-        className="absolute top-4 left-1/2 -translate-x-1/2 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-700 hover:bg-zinc-800 transition-all-200 z-100                 hover:scale-105
+        className="absolute top-4 left-1/2 -translate-x-1/2 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-700 hover:bg-zinc-800 transition-all-200 z-40                 hover:scale-105
                 active:scale-95"
       >
         <AudioLines className="w-6 h-6 bg-transparent" />
       </button>
       <button
         onClick={() => setIsSettingsOpen(!isSettingOpen)}
-        className="absolute bottom-4 left-4 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-700 hover:bg-zinc-800 transition-all-200 z-100                 hover:scale-105
+        className="absolute bottom-4 left-4 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-700 hover:bg-zinc-800 transition-all-200 z-40                hover:scale-105
                 active:scale-95"
       >
         <Settings className="w-6 h-6 bg-transparent" />
@@ -412,48 +419,68 @@ export default function App() {
       <MyDialog
         isVisible={isSettingOpen}
         handleClose={() => setIsSettingsOpen(false)}
+        title="Settings"
       >
         <div className="space-y-8 text-white">
-          <div className="text-lg font-medium">{lang === 'zh' ? '語言' : 'Language'}</div>
-          <select
-            value={lang}
-            onChange={(e) => {
-              const nextLang = e.target.value
-              switchLocale(nextLang)
-              const segments = location.pathname.split("/")
-              segments[1] = nextLang
-              navigate(segments.join("/"))
-            }}
-            className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-white focus:border-white focus:outline-none"
-          >
-            <option value="en">English</option>
-            <option value="zh">中文</option>
-          </select>
-
-          <span className="text-lg font-medium mr-4">{lang === 'zh' ? '透明 UI' : 'Transparent UI'}</span>
-          <input
-            className="w-5 h-5"
-            type="checkbox"
-            checked={isTransparentUI}
-            onChange={(e) => {
-              setIsTransparentUI(e.target.checked)
-              if (e.target.checked) {
-                setUISettings("enableBlur", true)
-                setUISettings("uiOpacity", 0.8)
-              } else {
-                setUISettings("enableBlur", false)
-                setUISettings("uiOpacity", 0.8)
+          <div className="space-y-2">
+            <div className="text-lg font-medium">
+              {lang === "zh" ? "語言" : "Language"}
+            </div>
+            <select
+              value={lang}
+              onChange={(e) => {
+                const nextLang = e.target.value;
+                switchLocale(nextLang);
+                const segments = location.pathname.split("/");
+                segments[1] = nextLang;
+                navigate(segments.join("/"));
+              }}
+              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-white focus:border-white focus:outline-none"
+            >
+              <option value="en">English</option>
+              <option value="zh">中文</option>
+            </select>
+          </div>
+          <div>
+            <span className="text-lg font-medium mr-4">
+              {lang === "zh" ? "透明 UI" : "Transparent UI"}
+            </span>
+            <input
+              className="w-5 h-5"
+              type="checkbox"
+              checked={isTransparentUI}
+              onChange={(e) => {
+                setIsTransparentUI(e.target.checked);
+                if (e.target.checked) {
+                  setUISettings("enableBlur", true);
+                  setUISettings("uiOpacity", 0.8);
+                } else {
+                  setUISettings("enableBlur", false);
+                  setUISettings("uiOpacity", 0.8);
+                }
+              }}
+            />
+          </div>
+          <div>
+            <span className="text-md">Feedback: </span>
+            <a
+              className="underline decoration-dashed"
+              href={
+                lang === "zh"
+                  ? "https://tally.so/r/LZG9Oz"
+                  : "https://tally.so/r/obk06M"
               }
-            }}
-          />
-
+            >
+              Tally Form
+            </a>
+          </div>
           <div className="flex justify-end">
             <button
               type="button"
               onClick={() => setIsSettingsOpen(false)}
               className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-white hover:bg-zinc-800"
-            >{lang === 'zh' ? '關閉' : 'close'}
-
+            >
+              {lang === "zh" ? "關閉" : "close"}
             </button>
           </div>
         </div>
@@ -513,7 +540,8 @@ export default function App() {
         duration={duration}
         onSeek={seek}
         visible={isFloatVis}
+        vp9Support={vp9Support}
       />
     </div>
-  )
+  );
 }
