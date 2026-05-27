@@ -17,33 +17,49 @@ export function isApplePlatform(): boolean {
   return isIOS || isiPad
 }
 
-/**
- * Detects if the browser supports VP9 Profile 3 with alpha channel encoding via WebCodecs.
- * Uses the same codec strings and config as the actual rendering worker.
- */
-export async function supportsVp9Alpha(): Promise<boolean> {
-  if (typeof VideoEncoder === "undefined") return false
+export interface Vp9AlphaSupport {
+  hardware: boolean
+  software: boolean
+}
 
-  const configs = [
-    { codec: "vp09.03.10.08.02.01.01.01.01", hardwareAcceleration: "prefer-hardware" as const },
-    { codec: "vp09.03.10.08", hardwareAcceleration: "prefer-hardware" as const },
-    { codec: "vp09.00.10.08", hardwareAcceleration: "prefer-hardware" as const },
-    { codec: "vp09.03.10.08.02.01.01.01.01", hardwareAcceleration: "prefer-software" as const },
-    { codec: "vp09.03.10.08", hardwareAcceleration: "prefer-software" as const },
-    { codec: "vp09.00.10.08", hardwareAcceleration: "prefer-software" as const },
+async function checkVp9ByAcceleration(
+  accel: "prefer-hardware" | "prefer-software",
+): Promise<boolean> {
+  const candidates = [
+    "vp09.03.10.08.02.01.01.01.01",
+    "vp09.03.10.08",
+    "vp09.00.10.08",
   ]
-
-  for (const { codec, hardwareAcceleration } of configs) {
+  for (const codec of candidates) {
     try {
       const support = await VideoEncoder.isConfigSupported({
         codec, width: 1280, height: 720,
         framerate: 30, bitrate: 5_000_000,
-        hardwareAcceleration,
+        hardwareAcceleration: accel,
         alpha: "keep",
       } as VideoEncoderConfig)
       if (support.supported) return true
     } catch { /* skip */ }
   }
-
   return false
+}
+
+/**
+ * Checks VP9 Profile 3 + alpha support separately for hardware and software encoding.
+ */
+export async function checkVp9AlphaSupport(): Promise<Vp9AlphaSupport> {
+  if (typeof VideoEncoder === "undefined") return { hardware: false, software: false }
+  const [hardware, software] = await Promise.all([
+    checkVp9ByAcceleration("prefer-hardware"),
+    checkVp9ByAcceleration("prefer-software"),
+  ])
+  return { hardware, software }
+}
+
+/**
+ * Returns true if VP9+alpha is supported via either hardware or software encoding.
+ */
+export async function supportsVp9Alpha(): Promise<boolean> {
+  const result = await checkVp9AlphaSupport()
+  return result.hardware || result.software
 }

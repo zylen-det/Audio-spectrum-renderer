@@ -15,3 +15,8 @@ UI:
 - 想辦法加入背景顏色選項，想辦法應用透明通道渲染
   ISSUE: 走Webm路徑但導出的檔案是mp4格式，且沒有畫面只有與音檔時長相同的空畫面影片
   FIXED.
+  DONE.
+- EXPORT:
+  - 加入導出格式: mp4, webm, gif, 根據透明背景是否啟用禁用mp4和webm
+  - 應該在啟用透明被改變時檢查透明通道+硬體和透通道+軟體是否可用，並顯示在UI: Export Settings: encoder的選項可用與否
+    DONE.

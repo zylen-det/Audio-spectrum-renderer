@@ -18,7 +18,7 @@ interface FloatingControlsProps {
   duration: number
   onSeek: (time: number) => void
   visible: boolean
-  supportsTransparentBg?: boolean
+  vp9Support?: { hardware: boolean; software: boolean }
 }
 
 export function FloatingControls({
@@ -28,15 +28,25 @@ export function FloatingControls({
   currentTime,
   duration,
   visible,
-  supportsTransparentBg,
+  vp9Support,
 }: FloatingControlsProps) {
   const { t: dict } = useI18n()
   const { uiOpacity, enableBlur } = useUISettings()
-  const transparentBgUnsupported = supportsTransparentBg === false
+  const vp9Known = vp9Support !== undefined
+  const transparentBgUnsupported = vp9Known && !vp9Support.hardware && !vp9Support.software
+  const hwUnsupportedForTransparent = vp9Known && !vp9Support.hardware
+  const swUnsupportedForTransparent = vp9Known && !vp9Support.software
 
   const handleSettingsChange = (newSettings: VisualizerSettings) => {
     if (transparentBgUnsupported && newSettings.enableTransparentBg) {
       newSettings = { ...newSettings, enableTransparentBg: false }
+    }
+    if (newSettings.enableTransparentBg) {
+      if (newSettings.encoder === "webcodecs-hw" && hwUnsupportedForTransparent) {
+        newSettings = { ...newSettings, encoder: "webcodecs-sw" }
+      } else if (newSettings.encoder === "webcodecs-sw" && swUnsupportedForTransparent) {
+        newSettings = { ...newSettings, encoder: "webcodecs-hw" }
+      }
     }
     onSettingsChange(newSettings)
   }
@@ -45,7 +55,14 @@ export function FloatingControls({
     if (transparentBgUnsupported && settings.enableTransparentBg) {
       onSettingsChange({ ...settings, enableTransparentBg: false })
     }
-  }, [transparentBgUnsupported])
+    if (settings.enableTransparentBg && vp9Known) {
+      if (settings.encoder === "webcodecs-hw" && hwUnsupportedForTransparent) {
+        onSettingsChange({ ...settings, encoder: "webcodecs-sw" })
+      } else if (settings.encoder === "webcodecs-sw" && swUnsupportedForTransparent) {
+        onSettingsChange({ ...settings, encoder: "webcodecs-hw" })
+      }
+    }
+  }, [vp9Known])
 
   // --- settings helpers ---
   const updateSetting = <K extends keyof VisualizerSettings>(
@@ -196,10 +213,16 @@ export function FloatingControls({
                         }
                         className="w-full bg-zinc-800/80 border border-zinc-700/80 rounded-lg pl-3 pr-8 py-1.5 text-xs sm:text-sm text-zinc-200 outline-none focus:border-white/20 transition-colors cursor-pointer appearance-none"
                       >
-                        <option value="webcodecs-hw" disabled={typeof window !== "undefined" && !("VideoEncoder" in window)} title={typeof window !== "undefined" && !("VideoEncoder" in window) ? "WebCodecs unsupported in this browser." : dict.controls.encoderDescription.webcodecHardware} className={typeof window !== "undefined" && !("VideoEncoder" in window) ? "text-zinc-600" : ""}>
+                        <option value="webcodecs-hw"
+                          disabled={typeof window !== "undefined" && !("VideoEncoder" in window) || (settings.enableTransparentBg && hwUnsupportedForTransparent)}
+                          title={typeof window !== "undefined" && !("VideoEncoder" in window) ? "WebCodecs unsupported in this browser." : settings.enableTransparentBg && hwUnsupportedForTransparent ? "Hardware VP9+alpha not supported" : dict.controls.encoderDescription.webcodecHardware}
+                          className={typeof window !== "undefined" && !("VideoEncoder" in window) || (settings.enableTransparentBg && hwUnsupportedForTransparent) ? "text-zinc-600" : ""}>
                           WebCodec (Hardware)
                         </option>
-                        <option value="webcodecs-sw" disabled={typeof window !== "undefined" && !("VideoEncoder" in window)} title={typeof window !== "undefined" && !("VideoEncoder" in window) ? "WebCodecs unsupported in this browser." : dict.controls.encoderDescription.webcodecSoftware} className={typeof window !== "undefined" && !("VideoEncoder" in window) ? "text-zinc-600" : ""}>
+                        <option value="webcodecs-sw"
+                          disabled={typeof window !== "undefined" && !("VideoEncoder" in window) || (settings.enableTransparentBg && swUnsupportedForTransparent)}
+                          title={typeof window !== "undefined" && !("VideoEncoder" in window) ? "WebCodecs unsupported in this browser." : settings.enableTransparentBg && swUnsupportedForTransparent ? "Software VP9+alpha not supported" : dict.controls.encoderDescription.webcodecSoftware}
+                          className={typeof window !== "undefined" && !("VideoEncoder" in window) || (settings.enableTransparentBg && swUnsupportedForTransparent) ? "text-zinc-600" : ""}>
                           WebCodec (Software)
                         </option>
                       </select>

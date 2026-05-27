@@ -87,11 +87,11 @@ export default function App() {
   const activeWorkerRef = useRef<Worker | null>(null)
   const prevVolumeRef = useRef(1)
   const [isSettingOpen, setIsSettingsOpen] = useState(false)
-  const [supportsTransparentBg, setSupportsTransparentBg] = useState<boolean | undefined>()
+  const [vp9Support, setVp9Support] = useState<{ hardware: boolean; software: boolean } | undefined>()
 
   useEffect(() => {
-    import("../../utils/platform").then(({ supportsVp9Alpha }) =>
-      supportsVp9Alpha().then(setSupportsTransparentBg)
+    import("../../utils/platform").then(({ checkVp9AlphaSupport }) =>
+      checkVp9AlphaSupport().then(setVp9Support)
     )
   }, [])
 
@@ -510,7 +510,7 @@ export default function App() {
         duration={duration}
         onSeek={seek}
         visible={isFloatVis}
-        supportsTransparentBg={supportsTransparentBg}
+        vp9Support={vp9Support}
       />
     </div>
   )
