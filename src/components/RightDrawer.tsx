@@ -114,23 +114,10 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
                   timestamps={task.stageTimestamps.decoding}
                 />
 
-                {task.settings.encoder === "ffmpeg" && (
-                  <StageItem
-                    label="Generating Frames"
-                    progress={task.stageProgress.physics}
-                    isActive={
-                      task.status === "rendering_frames" &&
-                      !task.stageTimestamps.physics?.end
-                    }
-                    isDone={!!task.stageTimestamps.physics?.end}
-                    timestamps={task.stageTimestamps.physics}
-                  />
-                )}
-
                 <StageItem
                   label="Rendering"
                   progress={task.stageProgress.rendering}
-                  isActive={task.status === "rendering_frames"}
+                  isActive={task.status === "analyzing" && !task.stageTimestamps.rendering?.end}
                   isDone={!!task.stageTimestamps.rendering?.end}
                   timestamps={task.stageTimestamps.rendering}
                 />
@@ -147,7 +134,7 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
               {task.status === "done" && task.resultUrl && (
                 <a
                   href={task.resultUrl}
-                  download={`spectrum-${task.fileName}.mp4`}
+                  download={`spectrum-${task.fileName}.${task.resultFormat || "mp4"}`}
                   className="flex items-center justify-center gap-2 w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 test-sm font-bold py-2 rounded-lg transition-colors"
                 >
                   <Download size={14} />
@@ -246,13 +233,11 @@ const StageItem = ({
   const displayLabel = isDone
     ? label === "Decoding"
       ? "Decoded"
-      : label === "Generating Frames"
-        ? "Generated"
-        : label === "Rendering"
-          ? "Rendered"
-          : label === "Mixing"
-            ? "Mixed"
-            : label
+      : label === "Rendering"
+        ? "Rendered"
+        : label === "Mixing"
+          ? "Mixed"
+          : label
     : label
 
   return (
@@ -311,7 +296,6 @@ const StatusIcon = ({ status }: { status: RenderTask["status"] }) => {
     case "idle":
       return <div className="w-4 h-4 rounded-full border-2 border-zinc-600" />
     case "analyzing":
-    case "rendering_frames":
     case "encoding":
       return <Loader2 size={16} className="animate-spin text-zinc-200" />
     case "done":

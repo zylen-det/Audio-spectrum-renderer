@@ -1,9 +1,10 @@
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
+import basicSsl from "@vitejs/plugin-basic-ssl"
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), basicSsl()],
   server: {
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",
@@ -13,5 +14,6 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/util"],
+    include: ["motion/react", "lucide-react", "@radix-ui/react-popover"],
   },
 })

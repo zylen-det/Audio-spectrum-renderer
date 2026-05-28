@@ -5,6 +5,7 @@ interface MyDialogProps {
   BackgroundStyle?: string
   InnerStyle?: string
   isVisible: boolean
+  title?: string
   children?: React.ReactNode
   handleClose?: () => void
 }
@@ -14,6 +15,7 @@ export function MyDialog({
   children,
   BackgroundStyle,
   InnerStyle,
+  title,
   handleClose
 }: MyDialogProps) {
 
@@ -35,6 +37,14 @@ export function MyDialog({
             className={"bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl z-99" + InnerStyle}
             onClick={(e) => e.stopPropagation()}
           >
+            {title && (
+              <>
+                <h2 className="text-lg font-semibold text-left mb-4">
+                  {title}
+                </h2>
+                <div className="border-t border-zinc-700 mb-4" />
+              </>
+            )}
             {children}
           </motion.div>
         </motion.div>
