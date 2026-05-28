@@ -242,6 +242,9 @@ async function renderWebM(
                     const blob = new Blob([buffer], { type: "video/webm" })
                     const url = URL.createObjectURL(blob)
                     console.log("[WebM] WebM blob created, size:", blob.size, "bytes, url:", url)
+                    updateProgress({ stageTimestamp: { stage: 'rendering', type: 'end' } })
+                    updateProgress({ status: "encoding", stageTimestamp: { stage: 'mixing', type: 'start' } })
+                    updateProgress({ stageProgress: { mixing: 100 } })
                     resolve({ url, format: "webm" })
                 } else {
                     // VP9 not supported, fell back to H.264/MP4 – need FFmpeg muxing
