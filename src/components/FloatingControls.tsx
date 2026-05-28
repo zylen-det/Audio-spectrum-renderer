@@ -150,53 +150,53 @@ export function FloatingControls({
                     />
                   </div>
 
-                <div className="flex flex-col gap-2">
-                     <label className="relative flex items-center cursor-pointer gap-2 h-8">
-                       <input
-                         type="checkbox"
-                         checked={settings.enableGreenScreen}
-                         onChange={(e) => {
-                           const checked = e.target.checked
-                           handleSettingsChange({
-                             ...settings,
-                             enableGreenScreen: checked,
-                             enableTransparentBg: checked ? false : settings.enableTransparentBg,
-                           })
-                         }}
-                          className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                       />
-                       <span className="text-xs sm:text-sm text-zinc-300">
-                         {dict.controls.enableGreenScgeen} ( #00FF00 )
-                       </span>
-
-                     </label>
-                     <label className="relative flex items-center cursor-pointer gap-2 h-8">
-                       <input
-                         type="checkbox"
-                         checked={settings.enableTransparentBg}
+                  <div className="flex flex-col gap-2">
+                    <label className="relative flex items-center cursor-pointer gap-2 h-8">
+                      <input
+                        type="checkbox"
+                        checked={settings.enableGreenScreen}
                         onChange={(e) => {
-                            if (transparentBgUnsupported) return
-                            const checked = e.target.checked
-                            const newSettings = {
-                              ...settings,
-                              enableTransparentBg: checked,
-                              enableGreenScreen: checked ? false : settings.enableGreenScreen,
-                            }
-                            if (checked && settings.exportFormat === "mp4") {
-                              newSettings.exportFormat = "gif"
-                            }
-                            handleSettingsChange(newSettings)
-                          }}
-                          disabled={transparentBgUnsupported}
-                          title={transparentBgUnsupported ? "Transparent background not supported in this browser" : ""}
-                         className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                       />
-                       <span className="text-xs sm:text-sm text-zinc-300">
-                         {dict.controls.enableTransparentBg} ( transparent )
-                       </span>
+                          const checked = e.target.checked
+                          handleSettingsChange({
+                            ...settings,
+                            enableGreenScreen: checked,
+                            enableTransparentBg: checked ? false : settings.enableTransparentBg,
+                          })
+                        }}
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                      <span className="text-xs sm:text-sm text-zinc-300">
+                        {dict.controls.enableGreenScgeen} (#00FF00)
+                      </span>
 
-                     </label>
-                   </div>
+                    </label>
+                    <label className="relative flex items-center cursor-pointer gap-2 h-8">
+                      <input
+                        type="checkbox"
+                        checked={settings.enableTransparentBg}
+                        onChange={(e) => {
+                          if (transparentBgUnsupported) return
+                          const checked = e.target.checked
+                          const newSettings = {
+                            ...settings,
+                            enableTransparentBg: checked,
+                            enableGreenScreen: checked ? false : settings.enableGreenScreen,
+                          }
+                          if (checked && settings.exportFormat === "mp4") {
+                            newSettings.exportFormat = "gif"
+                          }
+                          handleSettingsChange(newSettings)
+                        }}
+                        disabled={transparentBgUnsupported}
+                        title={transparentBgUnsupported ? "Transparent background not supported in this browser" : ""}
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                      <span className="text-xs sm:text-sm text-zinc-300">
+                        {dict.controls.enableTransparentBg}(firefox)
+                      </span>
+
+                    </label>
+                  </div>
 
                   <div className="w-full sm:w-56 space-y-2">
                     <label className="text-xs sm:text-sm font-bold text-zinc-500">
@@ -269,7 +269,7 @@ export function FloatingControls({
 
                   <button
                     onClick={onRender}
-                    className="bg-white text-black px-6 sm:px-8 py-2 sm:py-2.5 text-xs sm:text-sm rounded-full font-bold hover:bg-zinc-200 transition-colors shadow-lg active:scale-95"
+                    className="bg-white text-black px-6 sm:px-8 py-4 sm:py-6 text-xs sm:text-sm rounded-full font-bold hover:bg-zinc-200 transition-colors shadow-lg active:scale-95"
                   >
                     {dict.common.render}
                   </button>
