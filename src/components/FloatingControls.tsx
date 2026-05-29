@@ -385,8 +385,8 @@ export function FloatingControls({
 
               {/* 裁剪對話框 - 全屏覆蓋 */}
               {showCrop && cropImageSrc && (
-                <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center">
-                  <div className="relative w-[90vw] h-[70vh] max-w-[1200px] rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-700">
+                <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center rounded-4xl gap-4 p-4">
+                  <div className="relative w-full max-w-[1200px] aspect-video rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-700">
                     <Cropper
                       image={cropImageSrc}
                       crop={crop}
@@ -397,9 +397,10 @@ export function FloatingControls({
                       onCropComplete={onCropComplete}
                     />
                   </div>
-                  <div className="flex items-center gap-4 mt-6">
-                    <div className="flex items-center gap-3 bg-zinc-800/80 px-4 py-2 rounded-full border border-zinc-700">
-                      <span className="text-xs text-zinc-400">Zoom</span>
+
+                  <div className="flex items-center gap-4 bg-zinc-800/80 px-6 py-3 rounded-full border border-zinc-700">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-zinc-400 whitespace-nowrap">Zoom</span>
                       <input
                         type="range"
                         min={1}
@@ -410,12 +411,9 @@ export function FloatingControls({
                         className="w-28 h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-700 accent-white [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                       />
                     </div>
-                    <button
-                      onClick={handleCropApply}
-                      className="bg-white text-black px-8 py-3 text-sm rounded-full font-bold hover:bg-zinc-200 transition-colors shadow-lg active:scale-95"
-                    >
-                      Apply
-                    </button>
+
+                    <div className="w-px h-6 bg-zinc-600" />
+
                     <button
                       onClick={() => {
                         setShowCrop(false)
@@ -423,9 +421,16 @@ export function FloatingControls({
                         setZoom(1)
                         setCrop({ x: 0, y: 0 })
                       }}
-                      className="bg-zinc-800 text-zinc-300 px-8 py-3 text-sm rounded-full font-bold hover:bg-zinc-700 transition-colors border border-zinc-700 active:scale-95"
+                      className="text-zinc-300 hover:text-white text-sm font-medium px-3 py-1.5 transition-colors"
                     >
                       Cancel
+                    </button>
+
+                    <button
+                      onClick={handleCropApply}
+                      className="bg-white text-black px-6 py-1.5 text-sm rounded-full font-bold hover:bg-zinc-200 transition-colors shadow-lg active:scale-95"
+                    >
+                      Apply
                     </button>
                   </div>
                 </div>

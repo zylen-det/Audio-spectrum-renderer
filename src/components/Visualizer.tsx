@@ -124,11 +124,10 @@ export const Visualizer: React.FC<VisualizerProps> = ({
   }, [settings, analyser, isPlaying])
 
   return (
-    <div className="w-full h-full flex items-center justify-center">
+    <div className="w-full h-full max-h-dvh flex items-center justify-center">
       <canvas
         ref={canvasRef}
-        className="w-full h-full max-w-[1280px] max-h-[720px]"
-        style={{ width: "100%", height: "100%" }}
+        className="w-full max-w-[1280px] aspect-video"
       />
     </div>
   )
