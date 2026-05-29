@@ -70,7 +70,7 @@ export function FloatingControls({
 
   const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || settings.enableGreenScreen || settings.enableTransparentBg) return
     const reader = new FileReader()
     reader.onload = () => {
       setCropImageSrc(reader.result as string)
@@ -83,7 +83,12 @@ export function FloatingControls({
   const handleCropApply = async () => {
     if (!cropImageSrc || !croppedAreaPixels) return
     const croppedDataUrl = await getCroppedImg(cropImageSrc, croppedAreaPixels)
-    updateSetting("backgroundImageUrl", croppedDataUrl)
+    onSettingsChange({
+      ...settings,
+      backgroundImageUrl: croppedDataUrl,
+      enableGreenScreen: false,
+      enableTransparentBg: false,
+    })
     setShowCrop(false)
     setCropImageSrc(null)
     setZoom(1)
@@ -198,7 +203,7 @@ export function FloatingControls({
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center bg-zinc-900/50 px-5 py-3 rounded-xl border border-zinc-700/50">
 
                   {/* 背景圖片相關 - 垂直堆疊 */}
-                  <div className="flex flex-col gap-2 items-center">
+                  <div className={`flex flex-col gap-2 items-center ${settings.enableGreenScreen || settings.enableTransparentBg ? "opacity-30 pointer-events-none" : ""}`}>
                     {/* 背景圖片上傳 */}
                     <label className="flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-zinc-200 text-xs sm:text-sm rounded-lg px-3 py-2 cursor-pointer transition-colors whitespace-nowrap w-full">
                       <ImagePlus size={14} />
@@ -248,6 +253,7 @@ export function FloatingControls({
                             ...settings,
                             enableGreenScreen: checked,
                             enableTransparentBg: checked ? false : settings.enableTransparentBg,
+                            backgroundImageUrl: checked ? "" : settings.backgroundImageUrl,
                           })
                         }}
                         disabled={hasBackgroundImage}
@@ -269,6 +275,7 @@ export function FloatingControls({
                             ...settings,
                             enableTransparentBg: checked,
                             enableGreenScreen: checked ? false : settings.enableGreenScreen,
+                            backgroundImageUrl: checked ? "" : settings.backgroundImageUrl,
                           }
                           if (checked && settings.exportFormat === "mp4") {
                             newSettings.exportFormat = "gif"
