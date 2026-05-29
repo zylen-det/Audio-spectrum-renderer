@@ -1,12 +1,13 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { VisualizerSettings } from "../types"
-import { RotateCcw } from "lucide-react"
+import { RotateCcw, ImagePlus, Trash2 } from "lucide-react"
 import { SettingInput } from "./SettingInput"
 import { DEFAULT_SETTINGS } from "../app/[lang]/App"
 import { useI18n } from "../app/[lang]/i18nContext"
 import { Range, getTrackBackground } from "react-range"
 import { useUISettings } from "../app/[lang]/UISettingsContext"
+import Cropper, { type Area, type Point } from "react-easy-crop"
 
 interface FloatingControlsProps {
   isPlaying: boolean
@@ -36,6 +37,64 @@ export function FloatingControls({
   const transparentBgUnsupported = vp9Known && !vp9Support.hardware && !vp9Support.software
   const hwUnsupportedForTransparent = vp9Known && !vp9Support.hardware
   const swUnsupportedForTransparent = vp9Known && !vp9Support.software
+
+  const [showCrop, setShowCrop] = useState(false)
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
+
+  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels)
+  }, [])
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<string> => {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.onerror = reject
+      img.src = imageSrc
+    })
+    const canvas = document.createElement("canvas")
+    canvas.width = 1280
+    canvas.height = 720
+    const ctx = canvas.getContext("2d")!
+    ctx.drawImage(
+      image,
+      pixelCrop.x, pixelCrop.y,
+      pixelCrop.width, pixelCrop.height,
+      0, 0, 1280, 720,
+    )
+    return canvas.toDataURL("image/jpeg", 0.95)
+  }
+
+  const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setCropImageSrc(reader.result as string)
+      setShowCrop(true)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ""
+  }
+
+  const handleCropApply = async () => {
+    if (!cropImageSrc || !croppedAreaPixels) return
+    const croppedDataUrl = await getCroppedImg(cropImageSrc, croppedAreaPixels)
+    updateSetting("backgroundImageUrl", croppedDataUrl)
+    setShowCrop(false)
+    setCropImageSrc(null)
+    setZoom(1)
+    setCrop({ x: 0, y: 0 })
+  }
+
+  const handleRemoveBackground = () => {
+    updateSetting("backgroundImageUrl", "")
+  }
+
+  const hasBackgroundImage = !!settings.backgroundImageUrl
 
   const handleSettingsChange = (newSettings: VisualizerSettings) => {
     if (transparentBgUnsupported && newSettings.enableTransparentBg) {
@@ -136,20 +195,48 @@ export function FloatingControls({
                   </button>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-8 sm:items-center bg-zinc-900/50 px-5 py-3 rounded-xl border border-zinc-700/50">
-                  <div className="w-full sm:w-48">
-                    <SettingInput
-                      label={dict.controls.renderFps}
-                      value={settings.renderFps || 60}
-                      onChange={(v) => updateSetting("renderFps", v)}
-                      onReset={() => resetSetting("renderFps")}
-                      min={1}
-                      max={60}
-                      step={1}
-                      unit="fps"
-                    />
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center bg-zinc-900/50 px-5 py-3 rounded-xl border border-zinc-700/50">
+
+                  {/* 背景圖片相關 - 垂直堆疊 */}
+                  <div className="flex flex-col gap-2 items-center">
+                    {/* 背景圖片上傳 */}
+                    <label className="flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-zinc-200 text-xs sm:text-sm rounded-lg px-3 py-2 cursor-pointer transition-colors whitespace-nowrap w-full">
+                      <ImagePlus size={14} />
+                      <span>{dict.controls.uploadBackground}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBackgroundUpload}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {/* 移除背景 */}
+                    {hasBackgroundImage && (
+                      <button
+                        onClick={handleRemoveBackground}
+                        className="flex items-center justify-center gap-1.5 bg-red-900/40 hover:bg-red-900/60 text-red-300 text-xs sm:text-sm rounded-lg px-3 py-2 transition-colors whitespace-nowrap w-full"
+                      >
+                        <Trash2 size={14} />
+                        <span>Remove</span>
+                      </button>
+                    )}
+
+                    {/* 背景亮度滑桿 */}
+                    <div className={`flex items-center gap-2 ${hasBackgroundImage ? "" : "opacity-30 pointer-events-none"}`}>
+                      <span className="text-xs sm:text-sm text-zinc-500 whitespace-nowrap">{dict.controls.backgroundBrightness}</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={Math.round((settings.backgroundBrightness ?? 1) * 100)}
+                        onChange={(e) => updateSetting("backgroundBrightness", Number(e.target.value) / 100)}
+                        className="w-20 sm:w-24 h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-700 accent-white [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+                      />
+                    </div>
                   </div>
 
+                  {/* 綠幕 / 透明背景 */}
                   <div className="flex flex-col gap-2">
                     <label className="relative flex items-center cursor-pointer gap-2 h-8">
                       <input
@@ -163,12 +250,13 @@ export function FloatingControls({
                             enableTransparentBg: checked ? false : settings.enableTransparentBg,
                           })
                         }}
+                        disabled={hasBackgroundImage}
+                        title={hasBackgroundImage ? "Disabled while background image is set" : ""}
                         className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <span className="text-xs sm:text-sm text-zinc-300">
                         {dict.controls.enableGreenScgeen} (#00FF00)
                       </span>
-
                     </label>
                     <label className="relative flex items-center cursor-pointer gap-2 h-8">
                       <input
@@ -187,15 +275,27 @@ export function FloatingControls({
                           }
                           handleSettingsChange(newSettings)
                         }}
-                        disabled={transparentBgUnsupported}
-                        title={transparentBgUnsupported ? "Transparent background not supported in this browser" : ""}
+                        disabled={transparentBgUnsupported || hasBackgroundImage}
+                        title={hasBackgroundImage ? "Disabled while background image is set" : transparentBgUnsupported ? "Transparent background not supported in this browser" : ""}
                         className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <span className="text-xs sm:text-sm text-zinc-300">
                         {dict.controls.enableTransparentBg}(firefox)
                       </span>
-
                     </label>
+                  </div>
+
+                  <div className="w-full sm:w-48">
+                    <SettingInput
+                      label={dict.controls.renderFps}
+                      value={settings.renderFps || 60}
+                      onChange={(v) => updateSetting("renderFps", v)}
+                      onReset={() => resetSetting("renderFps")}
+                      min={1}
+                      max={60}
+                      step={1}
+                      unit="fps"
+                    />
                   </div>
 
                   <div className="w-full sm:w-56 space-y-2">
@@ -275,6 +375,54 @@ export function FloatingControls({
                   </button>
                 </div>
               </div>
+
+              {/* 裁剪對話框 - 全屏覆蓋 */}
+              {showCrop && cropImageSrc && (
+                <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center">
+                  <div className="relative w-[90vw] h-[70vh] max-w-[1200px] rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-700">
+                    <Cropper
+                      image={cropImageSrc}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={16 / 9}
+                      onCropChange={setCrop}
+                      onZoomChange={setZoom}
+                      onCropComplete={onCropComplete}
+                    />
+                  </div>
+                  <div className="flex items-center gap-4 mt-6">
+                    <div className="flex items-center gap-3 bg-zinc-800/80 px-4 py-2 rounded-full border border-zinc-700">
+                      <span className="text-xs text-zinc-400">Zoom</span>
+                      <input
+                        type="range"
+                        min={1}
+                        max={3}
+                        step={0.1}
+                        value={zoom}
+                        onChange={(e) => setZoom(Number(e.target.value))}
+                        className="w-28 h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-700 accent-white [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+                      />
+                    </div>
+                    <button
+                      onClick={handleCropApply}
+                      className="bg-white text-black px-8 py-3 text-sm rounded-full font-bold hover:bg-zinc-200 transition-colors shadow-lg active:scale-95"
+                    >
+                      Apply
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowCrop(false)
+                        setCropImageSrc(null)
+                        setZoom(1)
+                        setCrop({ x: 0, y: 0 })
+                      }}
+                      className="bg-zinc-800 text-zinc-300 px-8 py-3 text-sm rounded-full font-bold hover:bg-zinc-700 transition-colors border border-zinc-700 active:scale-95"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* 主要設置區域 - 手機單列，桌面多列 */}
               <div className="grid grid-cols-1 sm:grid-cols-8 gap-4 sm:gap-x-6 sm:gap-y-2 items-start">
