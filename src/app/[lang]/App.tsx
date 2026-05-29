@@ -465,6 +465,7 @@ export default function App() {
             <span className="text-md">Feedback: </span>
             <a
               className="underline decoration-dashed"
+              target="blank"
               href={
                 lang === "zh"
                   ? "https://tally.so/r/LZG9Oz"
