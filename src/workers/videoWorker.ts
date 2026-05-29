@@ -222,6 +222,17 @@ async function runVideoProcessingWithMP4(
   if (!ctx) throw new Error("Worker: Could not get OffscreenCanvas context")
   console.log("[MP4] OffscreenCanvas context acquired")
 
+  let bgImage: ImageBitmap | null = null
+  if (settings.backgroundImageUrl && !settings.enableGreenScreen && !settings.enableTransparentBg) {
+    try {
+      const resp = await fetch(settings.backgroundImageUrl)
+      const blob = await resp.blob()
+      bgImage = await createImageBitmap(blob)
+    } catch (err) {
+      console.warn("[MP4] Failed to load background image:", err)
+    }
+  }
+
   const fftSize = FFT_SIZE
   console.log("[MP4] Generating frequency bands, barCount:", settings.barCount)
   const bands = generateFrequencyBands(
@@ -280,6 +291,7 @@ async function runVideoProcessingWithMP4(
       settings,
       width,
       height,
+      bgImage,
     )
 
     const frame = new VideoFrame(offscreen, {
@@ -414,6 +426,17 @@ async function runVideoProcessingWithWebM(
   const ctx = offscreen.getContext("2d", { alpha: true })
   if (!ctx) throw new Error("Worker: Could not get OffscreenCanvas context")
   console.log("[WebM] OffscreenCanvas context acquired")
+
+  let bgImage: ImageBitmap | null = null
+  if (settings.backgroundImageUrl && !settings.enableGreenScreen && !settings.enableTransparentBg) {
+    try {
+      const resp = await fetch(settings.backgroundImageUrl)
+      const blob = await resp.blob()
+      bgImage = await createImageBitmap(blob)
+    } catch (err) {
+      console.warn("[WebM] Failed to load background image:", err)
+    }
+  }
 
   // Set up mediabunny WebM output
   const target = new BufferTarget()
@@ -556,6 +579,7 @@ async function runVideoProcessingWithWebM(
       settings,
       width,
       height,
+      bgImage,
     )
 
     // CanvasSource internally creates a VideoFrame, handles color/alpha splitting,

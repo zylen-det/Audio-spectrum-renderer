@@ -43,6 +43,8 @@ const DEFAULT_SETTINGS: VisualizerSettings = {
   enableGreenScreen: false,
   enableTransparentBg: false,
   exportFormat: "mp4",
+  backgroundImageUrl: "",
+  backgroundBrightness: 1,
 };
 export { DEFAULT_SETTINGS };
 

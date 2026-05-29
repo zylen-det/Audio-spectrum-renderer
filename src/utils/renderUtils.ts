@@ -7,6 +7,7 @@ export const drawFrame = (
   settings: VisualizerSettings,
   width: number,
   height: number,
+  backgroundImage?: CanvasImageSource | null,
 ) => {
   const mode = settings.enableTransparentBg ? "transparent" : settings.enableGreenScreen ? "greenscreen" : "solid"
   if (settings.enableTransparentBg) {
@@ -14,6 +15,12 @@ export const drawFrame = (
   } else if (settings.enableGreenScreen) {
     ctx.fillStyle = "#00FF00"
     ctx.fillRect(0, 0, width, height)
+  } else if (backgroundImage) {
+    ctx.drawImage(backgroundImage, 0, 0, width, height)
+    if (settings.backgroundBrightness < 1) {
+      ctx.fillStyle = `rgba(0,0,0,${1 - settings.backgroundBrightness})`
+      ctx.fillRect(0, 0, width, height)
+    }
   } else {
     ctx.fillStyle = settings.backgroundColor || "#000"
     ctx.fillRect(0, 0, width, height)
