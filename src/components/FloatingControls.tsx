@@ -398,8 +398,10 @@ export function FloatingControls({
                     />
                   </div>
 
-                  <div className="flex items-center gap-4 bg-zinc-800/80 px-6 py-3 rounded-full border border-zinc-700">
-                    <div className="flex items-center gap-3">
+                  {/* 垂直布局容器 */}
+                  <div className="flex flex-col items-center gap-4">
+                    {/* Zoom Slider - 內層1 */}
+                    <div className="flex items-center gap-3 bg-zinc-800/80 px-6 py-3 rounded-full border border-zinc-700">
                       <span className="text-xs text-zinc-400 whitespace-nowrap">Zoom</span>
                       <input
                         type="range"
@@ -412,26 +414,26 @@ export function FloatingControls({
                       />
                     </div>
 
-                    <div className="w-px h-6 bg-zinc-600" />
-
-                    <button
-                      onClick={() => {
-                        setShowCrop(false)
-                        setCropImageSrc(null)
-                        setZoom(1)
-                        setCrop({ x: 0, y: 0 })
-                      }}
-                      className="text-zinc-300 hover:text-white text-sm font-medium px-3 py-1.5 transition-colors"
-                    >
-                      Cancel
-                    </button>
-
-                    <button
-                      onClick={handleCropApply}
-                      className="bg-white text-black px-6 py-1.5 text-sm rounded-full font-bold hover:bg-zinc-200 transition-colors shadow-lg active:scale-95"
-                    >
-                      Apply
-                    </button>
+                    {/* Cancel + Apply - 內層2 */}
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => {
+                          setShowCrop(false)
+                          setCropImageSrc(null)
+                          setZoom(1)
+                          setCrop({ x: 0, y: 0 })
+                        }}
+                        className="bg-zinc-800 text-zinc-300 px-8 py-3 text-sm rounded-full font-bold hover:bg-zinc-700 transition-colors border border-zinc-700 active:scale-95"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleCropApply}
+                        className="bg-white text-black px-8 py-3 text-sm rounded-full font-bold hover:bg-zinc-200 transition-colors shadow-lg active:scale-95"
+                      >
+                        Apply
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
