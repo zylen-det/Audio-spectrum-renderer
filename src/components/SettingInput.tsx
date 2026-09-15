@@ -11,6 +11,7 @@ interface SettingInputProps {
   step?: number
   unit?: string
   title?: string
+  disabled?: boolean
 }
 
 export const SettingInput = ({
@@ -23,6 +24,7 @@ export const SettingInput = ({
   step = 1,
   unit = "",
   title,
+  disabled = false,
 }: SettingInputProps) => {
   const [displayValue, setDisplayValue] = useState(value.toString())
 
@@ -50,7 +52,7 @@ export const SettingInput = ({
   }
 
   return (
-    <div title={title} className="space-y-2">
+    <div title={title} className={`space-y-2 ${disabled ? "opacity-50" : ""}`}>
       <div className="flex justify-between items-center">
         <label className="text-xs sm:text-sm font-bold text-zinc-500   tracking-wider">
           {label}
@@ -58,6 +60,7 @@ export const SettingInput = ({
         <div className="flex items-center gap-2">
           <button
             onClick={onReset}
+            disabled={disabled}
             className="text-zinc-600 hover:text-zinc-400 transition-colors"
           >
             <RotateCcw size={12} />
@@ -69,6 +72,7 @@ export const SettingInput = ({
               value={displayValue}
               onChange={handleInputChange}
               onBlur={handleBlur}
+              disabled={disabled}
               className="w-10 bg-transparent text-right outline-none test-sm font-mono text-zinc-200"
             />
             {unit && (
@@ -86,6 +90,7 @@ export const SettingInput = ({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
+        disabled={disabled}
         className="w-full accent-white h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer hover:bg-zinc-700 transition-colors"
       />
     </div>

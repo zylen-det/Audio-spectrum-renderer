@@ -11,11 +11,10 @@ import {
 import { VisualizerSettings } from "../types"
 import { drawFrame } from "../utils/renderUtils"
 import {
-  FFT_SIZE,
-  generateFrequencyBands,
-  performFFT,
-  calculateBarHeights,
-  applyWindowingToFrame,
+  calculateCavaBarHeights,
+  createCavaPlan,
+  createCavaState,
+  createCavaTimeDomainFrame,
 } from "../utils/audioMath"
 
 interface RenderPayload {
@@ -222,16 +221,14 @@ async function runVideoProcessingWithMP4(
   if (!ctx) throw new Error("Worker: Could not get OffscreenCanvas context")
   console.log("[MP4] OffscreenCanvas context acquired")
 
-  const fftSize = FFT_SIZE
   console.log("[MP4] Generating frequency bands, barCount:", settings.barCount)
-  const bands = generateFrequencyBands(
+  const cavaPlan = createCavaPlan(
     settings.barCount,
     sampleRate,
-    fftSize,
     settings.minFreq,
     settings.maxFreq,
   )
-  let currentHeights = new Array(settings.barCount).fill(0)
+  const cavaState = createCavaState(settings.barCount)
   const dt = 1 / fps
 
   const totalFrames = Math.ceil(duration * fps)
@@ -243,32 +240,24 @@ async function runVideoProcessingWithMP4(
       throw new Error("[MP4] encoderError: " + String(encoderError))
     }
 
-    const centerSample = Math.floor((i * sampleRate) / fps)
-    const startSample = Math.max(0, centerSample - fftSize / 2)
-
-    const timeData = new Float32Array(fftSize)
-    for (let s = 0; s < fftSize; s++) {
-      const idx = startSample + s
-      if (idx < channelData.length) {
-        timeData[s] = channelData[idx]
-      }
-    }
+    const endSample = Math.floor(((i + 1) * sampleRate) / fps)
+    const timeData = createCavaTimeDomainFrame(
+      channelData,
+      endSample,
+      cavaPlan.bassFftSize,
+    )
 
     if (i === 0) {
-      console.log("[MP4] First frame: centerSample:", centerSample, "startSample:", startSample, "non-zero samples:", timeData.filter(v => v !== 0).length)
+      console.log("[MP4] First frame: endSample:", endSample, "non-zero samples:", timeData.filter(v => v !== 0).length)
     }
 
-    const { real, imag } = applyWindowingToFrame(timeData, fftSize)
-    performFFT(real, imag)
-    currentHeights = calculateBarHeights(
-      real,
-      imag,
-      bands,
+    const frameHeights = calculateCavaBarHeights(
+      timeData,
+      cavaPlan,
+      cavaState,
       settings,
-      currentHeights,
       dt,
     )
-    const frameHeights = currentHeights
 
     if (i === 0) {
       console.log("[MP4] First frame heights (first 5):", frameHeights.slice(0, 5), "max:", Math.max(...frameHeights))
@@ -504,47 +493,41 @@ async function runVideoProcessingWithWebM(
   console.log("[WebM] Starting VP9 video encoding, totalFrames:", totalFrames)
 
   // FFT setup
-  const fftSize = FFT_SIZE
-  console.log("[WebM] Generating frequency bands, barCount:", settings.barCount, "FFT_SIZE:", fftSize)
-  const bands = generateFrequencyBands(
+  const cavaPlan = createCavaPlan(
     settings.barCount,
     sampleRate,
-    fftSize,
     settings.minFreq,
     settings.maxFreq,
   )
-  let currentHeights = new Array(settings.barCount).fill(0)
+  console.log("[WebM] Cava analysis plan:", {
+    barCount: settings.barCount,
+    fftSize: cavaPlan.fftSize,
+    bassFftSize: cavaPlan.bassFftSize,
+  })
+  const cavaState = createCavaState(settings.barCount)
   const dt = 1 / fps
 
   console.log("[WebM] Starting video frame loop, totalFrames:", totalFrames, "fps:", fps)
 
   for (let i = 0; i < totalFrames; i++) {
-    const centerSample = Math.floor((i * sampleRate) / fps)
-    const startSample = Math.max(0, centerSample - fftSize / 2)
-
-    const timeData = new Float32Array(fftSize)
-    for (let s = 0; s < fftSize; s++) {
-      const idx = startSample + s
-      if (idx < channelData.length) {
-        timeData[s] = channelData[idx]
-      }
-    }
+    const endSample = Math.floor(((i + 1) * sampleRate) / fps)
+    const timeData = createCavaTimeDomainFrame(
+      channelData,
+      endSample,
+      cavaPlan.bassFftSize,
+    )
 
     if (i === 0) {
-      console.log("[WebM] First frame: centerSample:", centerSample, "startSample:", startSample, "non-zero samples:", timeData.filter(v => v !== 0).length)
+      console.log("[WebM] First frame: endSample:", endSample, "non-zero samples:", timeData.filter(v => v !== 0).length)
     }
 
-    const { real, imag } = applyWindowingToFrame(timeData, fftSize)
-    performFFT(real, imag)
-    currentHeights = calculateBarHeights(
-      real,
-      imag,
-      bands,
+    const frameHeights = calculateCavaBarHeights(
+      timeData,
+      cavaPlan,
+      cavaState,
       settings,
-      currentHeights,
       dt,
     )
-    const frameHeights = currentHeights
 
     if (i === 0) {
       console.log("[WebM] First frame heights (first 5):", frameHeights.slice(0, 5), "max:", Math.max(...frameHeights))

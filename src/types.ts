@@ -10,7 +10,9 @@ export interface AudioFile {
 export interface VisualizerSettings {
   barCount: number
   barWidth: number
-  barHeightMultiplier: number
+  sensitivity: number
+  autosens: boolean
+  noiseReduction: number
   cornerRadius: number
   totalWidth: number
   spacing: number
@@ -20,15 +22,9 @@ export interface VisualizerSettings {
   negativeHeightScale: number
   positiveColor: string
   negativeColor: string
-  decay: number
-  attack: number
-  contrast: number
   yOffset: number
   renderFps: number
   encoder: "webcodecs-hw" | "webcodecs-sw"
-  softCeilingThreshold: number
-  softCeilingStrength: number
-  referenceFps: number
   minFreq: number
   maxFreq: number
   enableGreenScreen: boolean

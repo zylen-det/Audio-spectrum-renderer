@@ -409,15 +409,16 @@ export function FloatingControls({
                   </h3>
                   <div className="grid grid-cols-2 gap-x-3 sm:gap-x-6 gap-y-2">
                     <SettingInput
-                      title={dict.controls.gain_title}
-                      label={dict.controls.gain}
-                      value={settings.barHeightMultiplier}
-                      onChange={(v) => updateSetting("barHeightMultiplier", v)}
-                      onReset={() => resetSetting("barHeightMultiplier")}
-                      min={0.1}
-                      max={5}
-                      step={0.1}
-                      unit="x"
+                      title={dict.controls.sensitivity_title}
+                      label={dict.controls.sensitivity}
+                      value={settings.sensitivity}
+                      onChange={(v) => updateSetting("sensitivity", v)}
+                      onReset={() => resetSetting("sensitivity")}
+                      min={1}
+                      max={500}
+                      step={1}
+                      unit="%"
+                      disabled={settings.autosens}
                     />
                     <SettingInput
                       title={dict.controls.cornerRadius_title}
@@ -430,69 +431,28 @@ export function FloatingControls({
                       unit="px"
                     />
                     <SettingInput
-                      title={dict.controls.contrast_title}
-                      label={dict.controls.contrast}
-                      value={settings.contrast || 1.2}
-                      onChange={(v) => updateSetting("contrast", v)}
-                      onReset={() => resetSetting("contrast")}
-                      min={0.1}
-                      max={3.0}
-                      step={0.1}
-                      unit=""
-                    />
-                    <SettingInput
-                      title={dict.controls.referenceFps_title}
-                      label={dict.controls.referenceFps}
-                      value={settings.referenceFps ?? 144}
-                      onChange={(v) => updateSetting("referenceFps", v)}
-                      onReset={() => resetSetting("referenceFps")}
-                      min={30}
-                      max={240}
+                      title={dict.controls.noiseReduction_title}
+                      label={dict.controls.noiseReduction}
+                      value={settings.noiseReduction}
+                      onChange={(v) => updateSetting("noiseReduction", v)}
+                      onReset={() => resetSetting("noiseReduction")}
+                      min={0}
+                      max={100}
                       step={1}
-                      unit="fps"
+                      unit="%"
                     />
-                    <SettingInput
-                      title={dict.controls.attack_title}
-                      label={dict.controls.attack}
-                      value={settings.attack || 0.05}
-                      onChange={(v) => updateSetting("attack", v)}
-                      onReset={() => resetSetting("attack")}
-                      min={0.01}
-                      max={1.0}
-                      step={0.01}
-                      unit=""
-                    />
-                    <SettingInput
-                      title={dict.controls.decay_title}
-                      label={dict.controls.decay}
-                      value={settings.decay || 0.92}
-                      onChange={(v) => updateSetting("decay", v)}
-                      onReset={() => resetSetting("decay")}
-                      min={0.01}
-                      max={0.99}
-                      step={0.01}
-                      unit=""
-                    />
-                    <SettingInput
-                      title={dict.controls.ceiling_title}
-                      label={dict.controls.ceiling}
-                      value={settings.softCeilingThreshold ?? 0.7}
-                      onChange={(v) => updateSetting("softCeilingThreshold", v)}
-                      onReset={() => resetSetting("softCeilingThreshold")}
-                      min={0.1}
-                      max={1.5}
-                      step={0.05}
-                    />
-                    <SettingInput
-                      title={dict.controls.strength_title}
-                      label={dict.controls.strength}
-                      value={settings.softCeilingStrength ?? 2.0}
-                      onChange={(v) => updateSetting("softCeilingStrength", v)}
-                      onReset={() => resetSetting("softCeilingStrength")}
-                      min={0.1}
-                      max={10.0}
-                      step={0.1}
-                    />
+                    <label
+                      className="flex items-center gap-2 h-8 cursor-pointer text-xs sm:text-sm text-zinc-300"
+                      title={dict.controls.autosens_title}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={settings.autosens}
+                        onChange={(e) => updateSetting("autosens", e.target.checked)}
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0"
+                      />
+                      {dict.controls.autosens}
+                    </label>
                   </div>
 
                   {/* 頻率範圍 */}
@@ -509,11 +469,11 @@ export function FloatingControls({
                           <input
                             type="text"
                             inputMode="numeric"
-                            value={settings.minFreq || 20}
+                            value={settings.minFreq ?? 50}
                             onChange={(e) =>
                               updateFrequencyRange([
-                                Number(e.target.value) || 20,
-                                settings.maxFreq || 16000,
+                                Number(e.target.value) || 50,
+                                settings.maxFreq ?? 10000,
                               ])
                             }
                             className="w-16 bg-zinc-800/50 text-center outline-none text-xs sm:text-sm font-mono rounded px-2 py-1 border border-zinc-700/50 text-zinc-300"
@@ -530,11 +490,11 @@ export function FloatingControls({
                           <input
                             type="text"
                             inputMode="numeric"
-                            value={settings.maxFreq || 16000}
+                            value={settings.maxFreq ?? 10000}
                             onChange={(e) =>
                               updateFrequencyRange([
-                                settings.minFreq || 20,
-                                Number(e.target.value) || 16000,
+                                settings.minFreq ?? 50,
+                                Number(e.target.value) || 10000,
                               ])
                             }
                             className="w-16 bg-zinc-800/50 text-center outline-none text-xs sm:text-sm font-mono rounded px-2 py-1 border border-zinc-700/50 text-zinc-300"
@@ -548,7 +508,7 @@ export function FloatingControls({
                     <div className="mt-2">
                       <Range
                         draggableTrack
-                        values={[settings.minFreq || 20, settings.maxFreq || 16000]}
+                        values={[settings.minFreq ?? 50, settings.maxFreq ?? 10000]}
                         step={1}
                         min={20}
                         max={24000}
@@ -571,7 +531,7 @@ export function FloatingControls({
                                 width: "100%",
                                 borderRadius: "4px",
                                 background: getTrackBackground({
-                                  values: [settings.minFreq || 20, settings.maxFreq || 16000],
+                                  values: [settings.minFreq ?? 50, settings.maxFreq ?? 10000],
                                   colors: ["#27272a", "#9f9fa9", "#27272a"],
                                   min: 20,
                                   max: 24000,

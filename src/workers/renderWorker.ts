@@ -1,5 +1,10 @@
 import { VisualizerSettings } from "../types"
-import { FFT_SIZE, generateFrequencyBands, performFFT as performFFTCore, calculateBarHeights, applyWindowingToFrame } from "../utils/audioMath"
+import {
+  calculateCavaBarHeights,
+  createCavaPlan,
+  createCavaState,
+  createCavaTimeDomainFrame,
+} from "../utils/audioMath"
 
 (self as any).onmessage = async (e: MessageEvent) => {
   const { type, payload } = e.data
@@ -29,28 +34,30 @@ async function performFFT(
   renderFps: number,
 ) {
   const totalFrames = Math.ceil(duration * renderFps)
-  const fftSize = FFT_SIZE
   const spectrumData: number[][] = []
-
-  let currentHeights = new Array(settings.barCount).fill(0)
-  const bands = generateFrequencyBands(settings.barCount, sampleRate, fftSize, settings.minFreq, settings.maxFreq)
+  const plan = createCavaPlan(
+    settings.barCount,
+    sampleRate,
+    settings.minFreq,
+    settings.maxFreq,
+  )
+  const cavaState = createCavaState(settings.barCount)
   const dt = 1 / renderFps
 
   for (let i = 0; i < totalFrames; i++) {
-    const centerSample = Math.floor((i * sampleRate) / renderFps)
-    const startSample = Math.max(0, centerSample - fftSize / 2)
-    const timeData = new Float32Array(fftSize)
-    for (let s = 0; s < fftSize; s++) {
-      const idx = startSample + s
-      if (idx < channelData.length) {
-        timeData[s] = channelData[idx]
-      }
-    }
-
-    const { real, imag } = applyWindowingToFrame(timeData, fftSize)
-    performFFTCore(real, imag)
-    currentHeights = calculateBarHeights(real, imag, bands, settings, currentHeights, dt)
-    const frameHeights = currentHeights
+    const endSample = Math.floor(((i + 1) * sampleRate) / renderFps)
+    const timeData = createCavaTimeDomainFrame(
+      channelData,
+      endSample,
+      plan.bassFftSize,
+    )
+    const frameHeights = calculateCavaBarHeights(
+      timeData,
+      plan,
+      cavaState,
+      settings,
+      dt,
+    )
 
     spectrumData.push(frameHeights)
     if (spectrumData.length % 30 === 0) {

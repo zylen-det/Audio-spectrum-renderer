@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { AudioFile } from '../types';
+import { getCavaFftSize } from '../utils/audioMath';
 
 export const useAudioPlayer = (
   files: AudioFile[] = [],
@@ -29,7 +30,7 @@ export const useAudioPlayer = (
     const ctx = audioContextRef.current;
 
     const analyserNode = ctx.createAnalyser();
-    analyserNode.fftSize = 2048;
+    analyserNode.fftSize = Math.min(32768, getCavaFftSize(ctx.sampleRate) * 2);
     setAnalyser(analyserNode);
 
     const gainNode = ctx.createGain();

@@ -2,11 +2,9 @@ import React, { useEffect, useRef } from "react"
 import { VisualizerSettings } from "../types"
 import { drawFrame } from "../utils/renderUtils"
 import {
-  calculateBarHeights,
-  generateFrequencyBands,
-  performFFT,
-  FFT_SIZE,
-  applyWindowingToFrame,
+  calculateCavaBarHeights,
+  createCavaPlan,
+  createCavaState,
 } from "../utils/audioMath"
 
 interface VisualizerProps {
@@ -31,10 +29,10 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       const time = Date.now() / 1000
       for (let i = 0; i < settings.barCount; i++) {
         const val = Math.sin(i * 0.5 + time) * 0.05 + 0.1
-        currentHeightsRef.current[i] = val * settings.barHeightMultiplier
+        currentHeightsRef.current[i] = val
       }
     }
-  }, [settings.barCount, settings.barHeightMultiplier])
+  }, [settings.barCount])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -48,13 +46,13 @@ export const Visualizer: React.FC<VisualizerProps> = ({
     canvas.height = rect.height * dpr
     ctx.scale(dpr, dpr)
 
-    const bands = generateFrequencyBands(
+    const plan = createCavaPlan(
       settings.barCount,
       analyser?.context.sampleRate || 44100,
-      FFT_SIZE,
       settings.minFreq,
       settings.maxFreq,
     )
+    const cavaState = createCavaState(settings.barCount)
 
     const render = (time: number) => {
       const dt = Math.min(0.1, (time - lastTimeRef.current) / 1000)
@@ -71,25 +69,21 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       }
 
       if (isPlaying && analyser) {
-        const timeData = new Float32Array(FFT_SIZE)
+        const timeData = new Float32Array(plan.bassFftSize)
         analyser.getFloatTimeDomainData(timeData)
-
-        const { real, imag } = applyWindowingToFrame(timeData, FFT_SIZE)
-        performFFT(real, imag)
-
-        currentHeightsRef.current = calculateBarHeights(
-          real,
-          imag,
-          bands,
+        currentHeightsRef.current = calculateCavaBarHeights(
+          timeData,
+          plan,
+          cavaState,
           settings,
-          currentHeightsRef.current,
+          dt,
         )
       } else {
         const idleSpeed = dt * 10
         const idleTime = time / 1000
         for (let i = 0; i < settings.barCount; i++) {
           const val = Math.sin(i * 0.5 + idleTime) * 0.05 + 0.1
-          const target = val * settings.barHeightMultiplier
+          const target = val
           currentHeightsRef.current[i] +=
             (target - currentHeightsRef.current[i]) * idleSpeed
         }
