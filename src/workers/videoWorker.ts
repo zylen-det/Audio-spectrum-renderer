@@ -16,6 +16,7 @@ import {
   createCavaState,
   createCavaTimeDomainFrame,
 } from "../utils/audioMath"
+import { checkVp9AlphaSupport } from "../utils/vp9Support"
 
 interface RenderPayload {
   channelData: Float32Array
@@ -336,52 +337,29 @@ async function runVideoProcessingWithWebM(
     barCount: settings.barCount,
   })
 
-  // Quick upfront VP9+alpha support check for early fallback
-  const vp9SupportChecks: { codec: string; hw: "prefer-hardware" | "prefer-software" }[] = []
-  if (isHardware) {
-    vp9SupportChecks.push(
-      { codec: "vp09.03.10.08.02.01.01.01.01", hw: "prefer-hardware" },
-      { codec: "vp09.03.10.08", hw: "prefer-hardware" },
-      { codec: "vp09.00.10.08", hw: "prefer-hardware" },
-    )
-  }
-  vp9SupportChecks.push(
-    { codec: "vp09.03.10.08.02.01.01.01.01", hw: "prefer-software" },
-    { codec: "vp09.03.10.08", hw: "prefer-software" },
-    { codec: "vp09.00.10.08", hw: "prefer-software" },
-  )
-
-  let vp9CodecString: string | null = null
+  // Probe what the pipeline actually needs: plain VP9 (mediabunny splits
+  // color+alpha itself via WebGL2 and dual-encodes with alpha:discard).
+  // Browser-native VideoEncoder(alpha:"keep") is NOT required — probing for
+  // it is a false negative on Chrome, which rejects alpha:"keep" outright.
+  const vp9Support = await checkVp9AlphaSupport({ width, height, framerate: fps })
   let vp9HardwareAccel: "prefer-hardware" | "prefer-software" | null = null
-  for (const { codec, hw } of vp9SupportChecks) {
-    console.log("[WebM] Checking support for", codec, hw)
-    try {
-      const support = await VideoEncoder.isConfigSupported({
-        codec,
-        width,
-        height,
-        framerate: fps,
-        bitrate: 5_000_000,
-        hardwareAcceleration: hw,
-        alpha: "keep",
-      } as VideoEncoderConfig)
-      if (support.supported) {
-        vp9CodecString = (support.config as any).codec as string
-        vp9HardwareAccel = hw
-        console.log("[WebM] VP9+alpha supported:", vp9CodecString, hw)
-        break
-      }
-    } catch {
-      // skip
-    }
+  if (isHardware && vp9Support.hardware) {
+    vp9HardwareAccel = "prefer-hardware"
+  } else if (vp9Support.software) {
+    vp9HardwareAccel = "prefer-software"
   }
+  console.log("[WebM] Transparent-pipeline probe:", {
+    ...vp9Support,
+    selected: vp9HardwareAccel,
+    requestedHw: isHardware,
+  })
 
-  if (!vp9CodecString) {
-    console.warn("[WebM] VP9 Profile 3 not supported, falling back to H.264/MP4 (no alpha)")
+  if (!vp9HardwareAccel) {
+    console.warn("[WebM] Plain VP9 + WebGL2 unavailable, falling back to H.264/MP4 (no alpha)")
     ;(self as any).postMessage({
       type: "FALLBACK_TO_MP4",
       payload: {
-        reason: "VP9 Profile 3 codec not supported",
+        reason: "VP9 encode or WebGL2 not supported",
         userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
       },
     })
@@ -412,15 +390,17 @@ async function runVideoProcessingWithWebM(
   })
 
   // CanvasSource handles VP9 codec negotiation, alpha splitting (via WebGL2 ColorAlphaSplitter),
-  // and dual encoding (color + alpha) internally — producing proper AlphaMode=1 in the WebM header
-  // Use codec string and hardware acceleration from upfront support check
+  // and dual encoding (color + alpha) internally — producing proper AlphaMode=1 in the WebM header.
+  // NOTE: no fullCodecString override — forcing VP9 Profile 3 breaks Chrome
+  // (which rejects profiles 1/3 yet handles this dual-encode path fine).
+  // Let mediabunny negotiate (Profile 0 for 8-bit content); alpha travels
+  // as container side data regardless of profile.
   const canvasSource = new CanvasSource(offscreen, {
     codec: "vp9",
     bitrate: 5_000_000,
     alpha: "keep",
-    hardwareAcceleration: vp9HardwareAccel ?? "prefer-software",
+    hardwareAcceleration: vp9HardwareAccel,
     keyFrameInterval: 2,
-    fullCodecString: vp9CodecString,
   })
   output.addVideoTrack(canvasSource)
 

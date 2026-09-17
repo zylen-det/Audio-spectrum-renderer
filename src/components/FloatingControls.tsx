@@ -192,7 +192,7 @@ export function FloatingControls({
                         className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-white focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <span className="text-xs sm:text-sm text-zinc-300">
-                        {dict.controls.enableTransparentBg}(firefox)
+                        {dict.controls.enableTransparentBg}
                       </span>
 
                     </label>

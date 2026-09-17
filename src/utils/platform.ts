@@ -22,44 +22,8 @@ export interface Vp9AlphaSupport {
   software: boolean
 }
 
-async function checkVp9ByAcceleration(
-  accel: "prefer-hardware" | "prefer-software",
-): Promise<boolean> {
-  const candidates = [
-    "vp09.03.10.08.02.01.01.01.01",
-    "vp09.03.10.08",
-    "vp09.00.10.08",
-  ]
-  for (const codec of candidates) {
-    try {
-      const support = await VideoEncoder.isConfigSupported({
-        codec, width: 1280, height: 720,
-        framerate: 30, bitrate: 5_000_000,
-        hardwareAcceleration: accel,
-        alpha: "keep",
-      } as VideoEncoderConfig)
-      if (support.supported) return true
-    } catch { /* skip */ }
-  }
-  return false
-}
-
-/**
- * Checks VP9 Profile 3 + alpha support separately for hardware and software encoding.
- */
-export async function checkVp9AlphaSupport(): Promise<Vp9AlphaSupport> {
-  if (typeof VideoEncoder === "undefined") return { hardware: false, software: false }
-  const [hardware, software] = await Promise.all([
-    checkVp9ByAcceleration("prefer-hardware"),
-    checkVp9ByAcceleration("prefer-software"),
-  ])
-  return { hardware, software }
-}
-
-/**
- * Returns true if VP9+alpha is supported via either hardware or software encoding.
- */
-export async function supportsVp9Alpha(): Promise<boolean> {
-  const result = await checkVp9AlphaSupport()
-  return result.hardware || result.software
-}
+// Transparent-WebM capability probe lives in ./vp9Support (shared with the
+// render worker). It tests what the pipeline actually needs — plain VP9 +
+// WebGL2 — NOT browser-native VideoEncoder(alpha:"keep"), which Chrome
+// rejects even though the mediabunny dual-encode path works fine there.
+export { checkVp9AlphaSupport, supportsVp9Alpha } from "./vp9Support"

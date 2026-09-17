@@ -3,3 +3,4 @@ package-lock.json
 dist
 build
 todo
+docs/journal.md
