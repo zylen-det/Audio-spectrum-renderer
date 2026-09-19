@@ -388,6 +388,17 @@ async function runVideoProcessingWithWebM(
   if (!ctx) throw new Error("Worker: Could not get OffscreenCanvas context")
   console.log("[WebM] OffscreenCanvas context acquired")
 
+  let bgImage: ImageBitmap | null = null
+  if (settings.backgroundImageUrl && !settings.enableGreenScreen && !settings.enableTransparentBg) {
+    try {
+      const resp = await fetch(settings.backgroundImageUrl)
+      const blob = await resp.blob()
+      bgImage = await createImageBitmap(blob)
+    } catch (err) {
+      console.warn("[WebM] Failed to load background image:", err)
+    }
+  }
+
   // Set up mediabunny WebM output
   const target = new BufferTarget()
   const output = new Output({
@@ -477,17 +488,6 @@ async function runVideoProcessingWithWebM(
 
   const totalFrames = Math.ceil(duration * fps)
   console.log("[WebM] Starting VP9 video encoding, totalFrames:", totalFrames)
-
-  let bgImage: ImageBitmap | null = null
-  if (settings.backgroundImageUrl && !settings.enableGreenScreen && !settings.enableTransparentBg) {
-    try {
-      const resp = await fetch(settings.backgroundImageUrl)
-      const blob = await resp.blob()
-      bgImage = await createImageBitmap(blob)
-    } catch (err) {
-      console.warn("[WebM] Failed to load background image:", err)
-    }
-  }
 
   // FFT setup
   const cavaPlan = createCavaPlan(

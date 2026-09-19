@@ -274,7 +274,6 @@ export function FloatingControls({
                       <span className="text-xs sm:text-sm text-zinc-300">
                         {dict.controls.enableGreenScgeen} (#00FF00)
                       </span>
-
                     </label>
                     <label className="relative flex items-center cursor-pointer gap-2 h-8">
                       <input
@@ -301,7 +300,6 @@ export function FloatingControls({
                       <span className="text-xs sm:text-sm text-zinc-300">
                         {dict.controls.enableTransparentBg} (firefox)
                       </span>
-
                     </label>
                   </div>
 
