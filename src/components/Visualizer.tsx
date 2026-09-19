@@ -22,6 +22,17 @@ export const Visualizer: React.FC<VisualizerProps> = ({
   const animationRef = useRef<number>(0)
   const currentHeightsRef = useRef<number[]>([])
   const lastTimeRef = useRef<number>(performance.now())
+  const backgroundImageRef = useRef<HTMLImageElement | null>(null)
+
+  useEffect(() => {
+    if (settings.backgroundImageUrl) {
+      const img = new Image()
+      img.onload = () => { backgroundImageRef.current = img }
+      img.src = settings.backgroundImageUrl
+    } else {
+      backgroundImageRef.current = null
+    }
+  }, [settings.backgroundImageUrl])
 
   useEffect(() => {
     if (currentHeightsRef.current.length !== settings.barCount) {
@@ -95,6 +106,7 @@ export const Visualizer: React.FC<VisualizerProps> = ({
         settings,
         rect.width,
         rect.height,
+        backgroundImageRef.current,
       )
       animationRef.current = requestAnimationFrame(render)
     }

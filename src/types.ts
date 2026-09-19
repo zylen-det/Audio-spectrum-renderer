@@ -30,6 +30,8 @@ export interface VisualizerSettings {
   enableGreenScreen: boolean
   enableTransparentBg: boolean
   exportFormat: "mp4" | "webm" | "gif"
+  backgroundImageUrl?: string
+  backgroundBrightness: number
 }
 
 export interface UISettings {

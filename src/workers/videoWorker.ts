@@ -217,6 +217,17 @@ async function runVideoProcessingWithMP4(
   console.log("[MP4] OffscreenCanvas context acquired")
 
   console.log("[MP4] Generating frequency bands, barCount:", settings.barCount)
+  let bgImage: ImageBitmap | null = null
+  if (settings.backgroundImageUrl && !settings.enableGreenScreen && !settings.enableTransparentBg) {
+    try {
+      const resp = await fetch(settings.backgroundImageUrl)
+      const blob = await resp.blob()
+      bgImage = await createImageBitmap(blob)
+    } catch (err) {
+      console.warn("[MP4] Failed to load background image:", err)
+    }
+  }
+
   const cavaPlan = createCavaPlan(
     settings.barCount,
     sampleRate,
@@ -264,6 +275,7 @@ async function runVideoProcessingWithMP4(
       settings,
       width,
       height,
+      bgImage,
     )
 
     const frame = new VideoFrame(offscreen, {
@@ -466,6 +478,17 @@ async function runVideoProcessingWithWebM(
   const totalFrames = Math.ceil(duration * fps)
   console.log("[WebM] Starting VP9 video encoding, totalFrames:", totalFrames)
 
+  let bgImage: ImageBitmap | null = null
+  if (settings.backgroundImageUrl && !settings.enableGreenScreen && !settings.enableTransparentBg) {
+    try {
+      const resp = await fetch(settings.backgroundImageUrl)
+      const blob = await resp.blob()
+      bgImage = await createImageBitmap(blob)
+    } catch (err) {
+      console.warn("[WebM] Failed to load background image:", err)
+    }
+  }
+
   // FFT setup
   const cavaPlan = createCavaPlan(
     settings.barCount,
@@ -513,6 +536,7 @@ async function runVideoProcessingWithWebM(
       settings,
       width,
       height,
+      bgImage,
     )
 
     // CanvasSource internally creates a VideoFrame, handles color/alpha splitting,

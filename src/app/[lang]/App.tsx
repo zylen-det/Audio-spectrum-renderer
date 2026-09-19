@@ -39,6 +39,8 @@ const DEFAULT_SETTINGS: VisualizerSettings = {
   enableGreenScreen: false,
   enableTransparentBg: false,
   exportFormat: "mp4",
+  backgroundImageUrl: "",
+  backgroundBrightness: 1,
 };
 export { DEFAULT_SETTINGS };
 
@@ -467,6 +469,7 @@ export default function App() {
             <span className="text-md">Feedback: </span>
             <a
               className="underline decoration-dashed"
+              target="blank"
               href={
                 lang === "zh"
                   ? "https://tally.so/r/LZG9Oz"
