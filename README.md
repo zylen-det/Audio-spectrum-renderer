@@ -4,7 +4,7 @@
 
 ![App screenshot](public/screenshot.png)
 
-Live Demo: <https://your-deployment-url>
+Live Demo: <https://audio-spectrum-renderer.pages.dev>
 
 ## Try It in 30 Seconds
 
