@@ -13,8 +13,13 @@ import { fetchFile, toBlobURL } from "@ffmpeg/util";
 import { runVideoRender } from "../../utils/videoRenderer";
 import { PopOutButton } from "../../components/PopOutButton";
 import { PlaybackControls } from "../../components/PlaybackControls";
-import { AudioLines, Settings } from "lucide-react";
+import { AudioLines, Settings, Info, Github } from "lucide-react";
 import { MyDialog } from "../../components/MyDialog";
+
+const GITHUB_URL = "https://github.com/zylen-det/Audio-spectrum-renderer";
+const REPO_NAME = "Audio-spectrum-renderer";
+const CAVA_URL = "https://github.com/karlstav/cava";
+const CAVA_REPO_NAME = "cava";
 
 const DEFAULT_SETTINGS: VisualizerSettings = {
   barCount: 64,
@@ -89,6 +94,7 @@ export default function App() {
   const activeWorkerRef = useRef<Worker | null>(null);
   const prevVolumeRef = useRef(1);
   const [isSettingOpen, setIsSettingsOpen] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [vp9Support, setVp9Support] = useState<
     { hardware: boolean; software: boolean } | undefined
   >();
@@ -413,12 +419,84 @@ export default function App() {
         <AudioLines className="w-6 h-6 bg-transparent" />
       </button>
       <button
-        onClick={() => setIsSettingsOpen(!isSettingOpen)}
+        onClick={() => setIsInfoOpen(!isInfoOpen)}
         className="absolute bottom-4 left-4 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-700 hover:bg-zinc-800 transition-all-200 z-40                hover:scale-105
+                active:scale-95"
+      >
+        <Info className="w-6 h-6 bg-transparent" />
+      </button>
+      <button
+        onClick={() => setIsSettingsOpen(!isSettingOpen)}
+        className="absolute bottom-4 right-4 w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border-zinc-700 hover:bg-zinc-800 transition-all-200 z-40                hover:scale-105
                 active:scale-95"
       >
         <Settings className="w-6 h-6 bg-transparent" />
       </button>
+
+      <MyDialog
+        isVisible={isInfoOpen}
+        handleClose={() => setIsInfoOpen(false)}
+        title="Info"
+      >
+        <div className="space-y-8 text-white">
+          <p className="text-sm leading-relaxed text-zinc-300">
+            {lang === "zh"
+              ? "高效能音頻頻譜視覺化與影片渲染工具，可即時預覽並導出 MP4、WebM 或 GIF。"
+              : "A high-performance audio spectrum visualizer and video renderer. Preview in real time and export as MP4, WebM or GIF."}
+          </p>
+          <div>
+            <span className="text-md">Feedback: </span>
+            <a
+              className="underline decoration-dashed"
+              target="blank"
+              href={
+                lang === "zh"
+                  ? "https://tally.so/r/LZG9Oz"
+                  : "https://tally.so/r/obk06M"
+              }
+            >
+              Tally Form
+            </a>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-md text-zinc-300">
+              {lang === "zh" ? "本體 Repo: " : "This Repo: "}
+            </span>
+            <a
+              className="underline flex items-center gap-1.5 w-fit"
+              target="_blank"
+              rel="noreferrer"
+              href={GITHUB_URL}
+            >
+              <span>{REPO_NAME}</span>
+              <Github className="w-4 h-4" />
+            </a>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-md text-zinc-300">
+              {lang === "zh" ? "算法參考: " : "Algorithm Reference: "}
+            </span>
+            <a
+              className="underline inline-flex items-center gap-1.5 w-fit"
+              target="_blank"
+              rel="noreferrer"
+              href={CAVA_URL}
+            >
+              <span>{CAVA_REPO_NAME}</span>
+              <Github className="w-4 h-4" />
+            </a>
+          </div>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setIsInfoOpen(false)}
+              className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-white hover:bg-zinc-800"
+            >
+              {lang === "zh" ? "關閉" : "close"}
+            </button>
+          </div>
+        </div>
+      </MyDialog>
 
       <MyDialog
         isVisible={isSettingOpen}
@@ -464,20 +542,6 @@ export default function App() {
                 }
               }}
             />
-          </div>
-          <div>
-            <span className="text-md">Feedback: </span>
-            <a
-              className="underline decoration-dashed"
-              target="blank"
-              href={
-                lang === "zh"
-                  ? "https://tally.so/r/LZG9Oz"
-                  : "https://tally.so/r/obk06M"
-              }
-            >
-              Tally Form
-            </a>
           </div>
           <div className="flex justify-end">
             <button
