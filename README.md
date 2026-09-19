@@ -39,7 +39,7 @@ A high-performance audio spectrum visualizer and video renderer built with React
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/zhongdet/Audio-spectrum-renderer.git
+   git clone https://github.com/zylen-det/Audio-spectrum-renderer.git
    cd Audio-spectrum-renderer
    ```
 
