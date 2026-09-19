@@ -90,10 +90,16 @@ export default function App() {
   const [vp9Support, setVp9Support] = useState<
     { hardware: boolean; software: boolean } | undefined
   >();
+  const [h264HwSupport, setH264HwSupport] = useState<
+    { supported: boolean; codec: string | null } | undefined
+  >();
 
   useEffect(() => {
     import("../../utils/platform").then(({ checkVp9AlphaSupport }) =>
       checkVp9AlphaSupport().then(setVp9Support),
+    );
+    import("../../utils/h264Support").then(({ checkH264HwSupport }) =>
+      checkH264HwSupport().then(setH264HwSupport),
     );
   }, []);
 
@@ -537,6 +543,7 @@ export default function App() {
         onSeek={seek}
         visible={isFloatVis}
         vp9Support={vp9Support}
+        h264HwSupport={h264HwSupport}
       />
     </div>
   );

@@ -19,6 +19,7 @@ interface FloatingControlsProps {
   onSeek: (time: number) => void
   visible: boolean
   vp9Support?: { hardware: boolean; software: boolean }
+  h264HwSupport?: { supported: boolean; codec: string | null }
 }
 
 export function FloatingControls({
@@ -29,6 +30,7 @@ export function FloatingControls({
   duration,
   visible,
   vp9Support,
+  h264HwSupport,
 }: FloatingControlsProps) {
   const { t: dict } = useI18n()
   const { uiOpacity, enableBlur } = useUISettings()
@@ -36,6 +38,10 @@ export function FloatingControls({
   const transparentBgUnsupported = vp9Known && !vp9Support.hardware && !vp9Support.software
   const hwUnsupportedForTransparent = vp9Known && !vp9Support.hardware
   const swUnsupportedForTransparent = vp9Known && !vp9Support.software
+  // Opaque MP4 path: HW option gated by the 1-frame H.264 trial probe.
+  // Unknown (still probing) → optimistic, matches the VP9 pattern above.
+  const h264HwKnown = h264HwSupport !== undefined
+  const hwUnsupportedForOpaque = h264HwKnown && !h264HwSupport.supported
 
   const handleSettingsChange = (newSettings: VisualizerSettings) => {
     if (transparentBgUnsupported && newSettings.enableTransparentBg) {
@@ -62,7 +68,12 @@ export function FloatingControls({
         onSettingsChange({ ...settings, encoder: "webcodecs-hw" })
       }
     }
-  }, [vp9Known])
+    if (!settings.enableTransparentBg && h264HwKnown) {
+      if (settings.encoder === "webcodecs-hw" && hwUnsupportedForOpaque) {
+        onSettingsChange({ ...settings, encoder: "webcodecs-sw" })
+      }
+    }
+  }, [vp9Known, h264HwKnown])
 
   // --- settings helpers ---
   const updateSetting = <K extends keyof VisualizerSettings>(
@@ -214,9 +225,9 @@ export function FloatingControls({
                         className="w-full bg-zinc-800/80 border border-zinc-700/80 rounded-lg pl-3 pr-8 py-1.5 text-xs sm:text-sm text-zinc-200 outline-none focus:border-white/20 transition-colors cursor-pointer appearance-none"
                       >
                         <option value="webcodecs-hw"
-                          disabled={typeof window !== "undefined" && !("VideoEncoder" in window) || (settings.enableTransparentBg && hwUnsupportedForTransparent)}
-                          title={typeof window !== "undefined" && !("VideoEncoder" in window) ? "WebCodecs unsupported in this browser." : settings.enableTransparentBg && hwUnsupportedForTransparent ? "Hardware VP9+alpha not supported" : dict.controls.encoderDescription.webcodecHardware}
-                          className={typeof window !== "undefined" && !("VideoEncoder" in window) || (settings.enableTransparentBg && hwUnsupportedForTransparent) ? "text-zinc-600" : ""}>
+                          disabled={typeof window !== "undefined" && !("VideoEncoder" in window) || (settings.enableTransparentBg ? hwUnsupportedForTransparent : hwUnsupportedForOpaque)}
+                          title={typeof window !== "undefined" && !("VideoEncoder" in window) ? "WebCodecs unsupported in this browser." : settings.enableTransparentBg ? (hwUnsupportedForTransparent ? "Hardware VP9+alpha not supported" : dict.controls.encoderDescription.webcodecHardware) : (hwUnsupportedForOpaque ? "Hardware H.264 not supported (1-frame trial failed)" : dict.controls.encoderDescription.webcodecHardware)}
+                          className={typeof window !== "undefined" && !("VideoEncoder" in window) || (settings.enableTransparentBg ? hwUnsupportedForTransparent : hwUnsupportedForOpaque) ? "text-zinc-600" : ""}>
                           WebCodec (Hardware)
                         </option>
                         <option value="webcodecs-sw"

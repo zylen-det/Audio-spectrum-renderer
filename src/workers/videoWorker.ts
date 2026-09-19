@@ -17,6 +17,7 @@ import {
   createCavaTimeDomainFrame,
 } from "../utils/audioMath"
 import { checkVp9AlphaSupport } from "../utils/vp9Support"
+import { H264_CODEC_CANDIDATES } from "../utils/h264Support"
 
 interface RenderPayload {
   channelData: Float32Array
@@ -125,14 +126,7 @@ async function runVideoProcessingWithMP4(
     barCount: settings.barCount,
   })
 
-  const codecCandidates: string[] = [
-    "avc1.640028",
-    "avc1.64001F",
-    "avc1.4D4020",
-    "avc1.4D401F",
-    "avc1.42E01F",
-    "avc1.42001e",
-  ]
+  const codecCandidates: string[] = H264_CODEC_CANDIDATES
 
   console.log("[MP4] H.264 codec candidates:", codecCandidates)
   let encoderConfig: VideoEncoderConfig | null = null
