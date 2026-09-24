@@ -180,6 +180,26 @@ export default function App() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // 自動選中路徑：不在這裡預 decode，直接建 entry，
+    // 由 handleSelectFile → loadAudio 做唯一一次 decode，
+    // 再把 duration 回填到檔案列表（原本這裡 decode 一次、
+    // loadAudio 又 decode 一次）。
+    if (!currentFileId) {
+      const newFile: AudioFile = {
+        id: crypto.randomUUID(),
+        file,
+        name: file.name,
+        size: file.size,
+        duration: 0,
+        url: URL.createObjectURL(file),
+      };
+
+      setFiles((prev) => [newFile, ...prev]);
+      await handleSelectFile(newFile);
+      return;
+    }
+
+    // 已有選中檔案：只為列表顯示 decode 一次，不碰播放器。
     const ctx = new (
       window.AudioContext || (window as any).webkitAudioContext
     )();
@@ -198,16 +218,19 @@ export default function App() {
     };
 
     setFiles((prev) => [newFile, ...prev]);
-    if (!currentFileId) {
-      handleSelectFile(newFile);
-    }
   };
 
   const handleSelectFile = async (file: AudioFile) => {
     const idx = files.findIndex((f) => f.id === file.id);
     setCurrentFileId(file.id);
     setCurrentFileIndex(idx >= 0 ? idx : currentFileIndex);
-    await loadAudio(file.file);
+    const buf = await loadAudio(file.file);
+    if (buf) {
+      setFiles((prev) =>
+        prev.map((f) => (f.id === file.id ? { ...f, duration: buf.duration } : f)),
+      );
+    }
+    return buf;
   };
 
   const handleDeleteFile = (id: string) => {

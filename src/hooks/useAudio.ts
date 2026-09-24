@@ -61,18 +61,20 @@ export const useAudioPlayer = (
     cancelAnimationFrame(animationFrameRef.current);
   }, []);
 
-  const loadAudio = async (file: File) => {
-    if (!audioContextRef.current) return;
+  const loadAudio = useCallback(async (file: File) => {
+    if (!audioContextRef.current) return null;
 
     stop();
 
     const arrayBuffer = await file.arrayBuffer();
-    const decodedBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+    const decodedBuffer =
+      await audioContextRef.current.decodeAudioData(arrayBuffer);
     setAudioBuffer(decodedBuffer);
     setDuration(decodedBuffer.duration);
     setCurrentTime(0);
     pausedTimeRef.current = 0;
-  };
+    return decodedBuffer;
+  }, [stop]);
 
   const play = useCallback(() => {
     if (!audioContextRef.current || !audioBuffer || !analyser) return;
