@@ -24,7 +24,8 @@ export function I18nProvider({
     document.documentElement.lang = locale === "zh" ? "zh-TW" : "en"
   }, [locale])
 
-  const switchLocale = (newLocale: Locale) => {
+  const switchLocale = (newLocale: string) => {
+    if (newLocale !== "en" && newLocale !== "zh") return
     if (newLocale === locale) return
     setLocale(newLocale)
     setLocaleInStorage(newLocale)
