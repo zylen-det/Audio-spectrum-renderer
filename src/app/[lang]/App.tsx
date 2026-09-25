@@ -308,6 +308,7 @@ export default function App() {
       id: crypto.randomUUID(),
       fileId: file.id,
       fileName: file.name,
+      sourceDuration: file.duration,
       settings: { ...settings },
       status: "idle",
       progress: 0,

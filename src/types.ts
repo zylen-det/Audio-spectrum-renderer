@@ -57,6 +57,7 @@ export interface RenderTask {
   id: string
   fileId: string
   fileName: string
+  sourceDuration: number
   settings: VisualizerSettings
   status: RenderStage
   progress: number

@@ -11,8 +11,10 @@ import {
   X,
   AlertTriangle,
   Logs,
+  Clock,
 } from "lucide-react"
 import { MyDialog } from "../components/MyDialog";
+import { resolveTrimRange } from "../utils/trimRange";
 
 interface RightDrawerProps {
   queue: RenderTask[]
@@ -96,9 +98,23 @@ export const RightDrawer: React.FC<RightDrawerProps> = ({
               <div className="flex items-start justify-between pr-1">
                 <div className="flex items-center gap-1 min-w-0">
                   <Film size={16} className="text-zinc-500 shrink-0" />
-                  <h3 className="text-med font-medium w-[20ch] truncate text-zinc-200">
-                    {task.fileName}
-                  </h3>
+                  <div className="min-w-0">
+                    <h3 className="text-med font-medium w-[20ch] truncate text-zinc-200">
+                      {task.fileName}
+                    </h3>
+                    {task.sourceDuration > 0 && (
+                      <p className="flex items-center gap-1 text-xs text-zinc-500 mt-0.5">
+                        <Clock size={10} />
+                        {formatExportDuration(
+                          resolveTrimRange(
+                            task.settings.trimStart ?? 0,
+                            task.settings.trimEnd ?? -1,
+                            task.sourceDuration,
+                          ),
+                        )}
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <StatusIcon status={task.status} />
               </div>
@@ -289,6 +305,13 @@ const formatDuration = (ms: number) => {
   const minutes = Math.floor(totalSeconds / 60)
   const seconds = totalSeconds % 60
   return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+}
+
+const formatExportDuration = (range: { start: number; end: number }) => {
+  const totalSeconds = Math.max(0, Math.round(range.end - range.start))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`
 }
 
 const StatusIcon = ({ status }: { status: RenderTask["status"] }) => {
