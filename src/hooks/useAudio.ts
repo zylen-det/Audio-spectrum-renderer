@@ -1,10 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { AudioFile } from '../types';
 import { getCavaFftSize } from '../utils/audioMath';
+import { TrimRange, resolveTrimRange } from '../utils/trimRange';
+
+export interface TrimInput {
+  trimStart: number;
+  trimEnd: number;
+}
 
 export const useAudioPlayer = (
   files: AudioFile[] = [],
-  currentFileIndex: number = -1
+  currentFileIndex: number = -1,
+  trim: TrimInput | null = null
 ) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -20,6 +27,11 @@ export const useAudioPlayer = (
   const pausedTimeRef = useRef<number>(0);
   const animationFrameRef = useRef<number>(0);
   const currentFileIndexRef = useRef(currentFileIndex);
+  const trimRef = useRef(trim);
+
+  useEffect(() => {
+    trimRef.current = trim;
+  }, [trim]);
 
   useEffect(() => {
     currentFileIndexRef.current = currentFileIndex;
@@ -53,8 +65,18 @@ export const useAudioPlayer = (
 
   const stop = useCallback(() => {
     if (sourceRef.current) {
-      sourceRef.current.stop();
-      sourceRef.current.disconnect();
+      // Stopping an already-ended source throws; stopping must be safe to
+      // call from seek paths racing the loop boundary.
+      try {
+        sourceRef.current.stop();
+      } catch {
+        /* already stopped/ended */
+      }
+      try {
+        sourceRef.current.disconnect();
+      } catch {
+        /* already disconnected */
+      }
       sourceRef.current = null;
     }
     setIsPlaying(false);
@@ -87,7 +109,16 @@ export const useAudioPlayer = (
     source.buffer = audioBuffer;
     source.connect(analyser);
 
-    const offset = pausedTimeRef.current % audioBuffer.duration;
+    let offset = pausedTimeRef.current % audioBuffer.duration;
+    const rawTrim = trimRef.current;
+    const range: TrimRange | null = rawTrim
+      ? resolveTrimRange(rawTrim.trimStart, rawTrim.trimEnd, audioBuffer.duration)
+      : null;
+    const hasRange =
+      range && range.end > range.start && range.end < audioBuffer.duration - 1e-3;
+    if (range && range.end > range.start) {
+      if (offset < range.start || offset >= range.end) offset = range.start;
+    }
     source.start(0, offset);
 
     startTimeRef.current = audioContextRef.current.currentTime - offset;
@@ -98,6 +129,15 @@ export const useAudioPlayer = (
       if (!audioContextRef.current) return;
       const now = audioContextRef.current.currentTime;
       const current = now - startTimeRef.current;
+
+      if (hasRange && range && current >= range.end) {
+        // Loop back to range start.
+        stop();
+        pausedTimeRef.current = range.start;
+        setCurrentTime(range.start);
+        play();
+        return;
+      }
 
       if (current >= duration) {
         stop();
@@ -113,8 +153,16 @@ export const useAudioPlayer = (
 
   const pause = useCallback(() => {
     if (sourceRef.current) {
-      sourceRef.current.stop();
-      sourceRef.current.disconnect();
+      try {
+        sourceRef.current.stop();
+      } catch {
+        /* already stopped/ended */
+      }
+      try {
+        sourceRef.current.disconnect();
+      } catch {
+        /* already disconnected */
+      }
       sourceRef.current = null;
     }
     if (audioContextRef.current) {

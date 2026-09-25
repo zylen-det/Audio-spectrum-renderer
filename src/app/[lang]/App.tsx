@@ -46,6 +46,8 @@ const DEFAULT_SETTINGS: VisualizerSettings = {
   exportFormat: "mp4",
   backgroundImageUrl: "",
   backgroundBrightness: 1,
+  trimStart: 0,
+  trimEnd: -1,
 };
 export { DEFAULT_SETTINGS };
 
@@ -84,7 +86,10 @@ export default function App() {
     audioBuffer,
     volume,
     setVolume,
-  } = useAudioPlayer(files, currentFileIndex);
+  } = useAudioPlayer(files, currentFileIndex, {
+    trimStart: settings.trimStart,
+    trimEnd: settings.trimEnd,
+  });
 
   const [queue, setQueue] = useState<RenderTask[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -224,6 +229,8 @@ export default function App() {
     const idx = files.findIndex((f) => f.id === file.id);
     setCurrentFileId(file.id);
     setCurrentFileIndex(idx >= 0 ? idx : currentFileIndex);
+    // New audio: reset time range to full length.
+    setSettings((prev) => ({ ...prev, trimStart: 0, trimEnd: -1 }));
     const buf = await loadAudio(file.file);
     if (buf) {
       setFiles((prev) =>
@@ -631,6 +638,7 @@ export default function App() {
         currentTime={currentTime}
         duration={duration}
         onSeek={seek}
+        audioBuffer={audioBuffer}
         visible={isFloatVis}
         vp9Support={vp9Support}
         h264HwSupport={h264HwSupport}

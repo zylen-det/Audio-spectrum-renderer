@@ -7,6 +7,8 @@ import { DEFAULT_SETTINGS } from "../app/[lang]/App"
 import { useI18n } from "../app/[lang]/i18nContext"
 import { Range, getTrackBackground } from "react-range"
 import { useUISettings } from "../app/[lang]/UISettingsContext"
+import { TimeRangeSelector } from "./TimeRangeSelector"
+import { resolveTrimRange } from "../utils/trimRange"
 import Cropper, { type Area, type Point } from "react-easy-crop"
 
 interface FloatingControlsProps {
@@ -18,6 +20,7 @@ interface FloatingControlsProps {
   currentTime: number
   duration: number
   onSeek: (time: number) => void
+  audioBuffer: AudioBuffer | null
   visible: boolean
   vp9Support?: { hardware: boolean; software: boolean }
   h264HwSupport?: { supported: boolean; codec: string | null }
@@ -29,6 +32,8 @@ export function FloatingControls({
   onSettingsChange,
   currentTime,
   duration,
+  onSeek,
+  audioBuffer,
   visible,
   vp9Support,
   h264HwSupport,
@@ -187,6 +192,12 @@ export function FloatingControls({
     const newSettings = { ...settings, minFreq: vals[0], maxFreq: vals[1] }
     onSettingsChange(newSettings)
   }
+
+  const trimRange = resolveTrimRange(
+    settings.trimStart,
+    settings.trimEnd,
+    duration,
+  )
 
   return (
     <div className="fixed top-0 left-0 w-full h-full z-30 pointer-events-none">
@@ -734,6 +745,24 @@ export function FloatingControls({
                         )}
                       />
                     </div>
+                  </div>
+
+                  {/* 時間範圍（預覽＋匯出） */}
+                  <div className="space-y-2 pt-2" title={dict.controls.timeRange_title}>
+                    <label className="text-xs sm:text-sm font-bold text-zinc-500">
+                      {dict.controls.timeRange}
+                    </label>
+                    <TimeRangeSelector
+                      audioBuffer={audioBuffer}
+                      currentTime={currentTime}
+                      duration={duration}
+                      rangeStart={trimRange.start}
+                      rangeEnd={trimRange.end}
+                      onRangeChange={(start, end) =>
+                        onSettingsChange({ ...settings, trimStart: start, trimEnd: end })
+                      }
+                      onSeek={onSeek}
+                    />
                   </div>
                 </div>
               </div>

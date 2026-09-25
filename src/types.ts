@@ -32,6 +32,8 @@ export interface VisualizerSettings {
   exportFormat: "mp4" | "webm" | "gif"
   backgroundImageUrl?: string
   backgroundBrightness: number
+  trimStart: number
+  trimEnd: number
 }
 
 export interface UISettings {

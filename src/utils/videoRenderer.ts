@@ -1,6 +1,7 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg"
 import { fetchFile } from "@ffmpeg/util"
 import { VisualizerSettings, RenderTask } from "../types"
+import { resolveTrimRange } from "./trimRange"
 
 type UpdateProgressFn = (updates: {
     status?: RenderTask["status"],
@@ -35,12 +36,31 @@ export async function runVideoRender(
 
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
     const buffer = await ctx.decodeAudioData(await file.arrayBuffer())
-    const duration = buffer.duration
+    const fullDuration = buffer.duration
     const sampleRate = buffer.sampleRate
-    const channelData = buffer.getChannelData(0)
+    const fullChannelData = buffer.getChannelData(0)
     ctx.close()
 
-    console.log("[Render] Audio decoded", { duration, sampleRate, channelDataLength: channelData.length, numberOfChannels: buffer.numberOfChannels })
+    console.log("[Render] Audio decoded", { duration: fullDuration, sampleRate, channelDataLength: fullChannelData.length, numberOfChannels: buffer.numberOfChannels })
+
+    // Trim to export/preview range. Falls back to full length when unset.
+    const trim = resolveTrimRange(
+        task.settings.trimStart ?? 0,
+        task.settings.trimEnd ?? -1,
+        fullDuration,
+    )
+    const isTrimmed = trim.start > 1e-3 || trim.end < fullDuration - 1e-3
+    const duration = trim.end - trim.start
+    const startSample = Math.floor(trim.start * sampleRate)
+    const endSample = Math.min(fullChannelData.length, Math.ceil(trim.end * sampleRate))
+    const channelData = isTrimmed
+        ? fullChannelData.slice(startSample, endSample)
+        : fullChannelData
+    const audioTrimArgs = isTrimmed
+        ? ["-ss", trim.start.toFixed(3), "-t", duration.toFixed(3)]
+        : []
+
+    console.log("[Render] Trim range", { ...trim, isTrimmed, duration })
 
     updateProgress({ stageTimestamp: { stage: 'decoding', type: 'end' } })
     updateProgress({ stageTimestamp: { stage: 'rendering', type: 'start' } })
@@ -84,6 +104,7 @@ export async function runVideoRender(
                 height,
                 isHardware,
                 updateProgress,
+                audioTrimArgs,
             )
             break
         default: // "mp4"
@@ -99,6 +120,7 @@ export async function runVideoRender(
                 height,
                 isHardware,
                 updateProgress,
+                audioTrimArgs,
             )
             break
     }
@@ -119,6 +141,7 @@ async function renderMP4(
     height: number,
     preferHardware: boolean,
     updateProgress: UpdateProgressFn,
+    audioTrimArgs: string[],
 ): Promise<{ url: string; format: "mp4" }> {
     console.log("[MP4] renderMP4 called", { duration, sampleRate, preferHardware, channelDataLength: channelData.length })
     const worker = new Worker(
@@ -183,6 +206,7 @@ async function renderMP4(
 
     await ffmpeg.exec([
         "-i", "video_only.mp4",
+        ...audioTrimArgs,
         "-i", "audio.ext",
         "-c", "copy",
         "-map", "0:v:0",
@@ -211,6 +235,7 @@ async function renderWebM(
     height: number,
     preferHardware: boolean,
     updateProgress: UpdateProgressFn,
+    audioTrimArgs: string[],
 ): Promise<{ url: string; format: "mp4" | "webm" }> {
     console.log("[WebM] renderWebM called", { duration, sampleRate, preferHardware, channelDataLength: channelData.length })
     const worker = new Worker(
@@ -253,7 +278,7 @@ async function renderWebM(
                     updateProgress({ status: "encoding", stageTimestamp: { stage: 'mixing', type: 'start' } })
 
                     try {
-                        const { url, format } = await muxWithFFmpeg(ffmpeg, audioFile, buffer, updateProgress, duration)
+                        const { url, format } = await muxWithFFmpeg(ffmpeg, audioFile, buffer, updateProgress, duration, audioTrimArgs)
                         console.log("[WebM] FFmpeg mux complete, url:", url)
                         resolve({ url, format })
                     } catch (err: any) {
@@ -393,6 +418,7 @@ async function muxWithFFmpeg(
     videoBuffer: ArrayBuffer,
     updateProgress: UpdateProgressFn,
     duration: number,
+    audioTrimArgs: string[],
 ): Promise<{ url: string; format: "mp4" }> {
     await ffmpeg.writeFile("video_only.mp4", new Uint8Array(videoBuffer))
     await ffmpeg.writeFile("audio.ext", await fetchFile(audioFile))
@@ -410,6 +436,7 @@ async function muxWithFFmpeg(
 
     await ffmpeg.exec([
         "-i", "video_only.mp4",
+        ...audioTrimArgs,
         "-i", "audio.ext",
         "-c", "copy",
         "-map", "0:v:0",
