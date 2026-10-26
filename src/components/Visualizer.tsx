@@ -90,7 +90,7 @@ export const Visualizer: React.FC<VisualizerProps> = ({
         ctx.fillStyle = "#00FF00"
         ctx.fillRect(0, 0, rect.width, rect.height)
       } else {
-        ctx.fillStyle = "#000" //hardcode black background for preview
+        ctx.fillStyle = s.backgroundColor || "#000"
         ctx.fillRect(0, 0, rect.width, rect.height)
       }
 

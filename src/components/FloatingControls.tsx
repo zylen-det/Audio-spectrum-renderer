@@ -261,6 +261,30 @@ export function FloatingControls({
                         className="w-20 sm:w-24 h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-700 accent-white [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                       />
                     </div>
+
+                    {/* 背景顏色 */}
+                    <div className={`flex items-center gap-2 ${hasBackgroundImage ? "opacity-30 pointer-events-none" : ""}`}>
+                      <span className="text-xs sm:text-sm text-zinc-500 whitespace-nowrap">{dict.controls.backgroundColor}</span>
+                      <input
+                        type="color"
+                        value={settings.backgroundColor || "#000000"}
+                        onChange={(e) => updateSetting("backgroundColor", e.target.value)}
+                        className="h-6 w-8 rounded cursor-pointer bg-transparent border-none"
+                      />
+                      <input
+                        type="text"
+                        value={settings.backgroundColor}
+                        onChange={(e) => updateSetting("backgroundColor", e.target.value)}
+                        className="bg-zinc-800 text-xs sm:text-sm rounded px-2 py-1 w-20 border border-zinc-700 text-zinc-300 font-mono h-6"
+                      />
+                      <button
+                        onClick={() => resetSetting("backgroundColor")}
+                        className="text-zinc-600 hover:text-zinc-400 transition-colors"
+                        title="Reset to default"
+                      >
+                        <RotateCcw size={12} />
+                      </button>
+                    </div>
                     </div>
 
                   {/* 綠幕 / 透明背景 */}
